@@ -826,6 +826,20 @@ export default {
                 this.$set(s, 'checked', s.checked === true || s.checked === 1)
               })
             })
+
+
+              // 👇👇👇 【新增】处理默认选中项的加价逻辑（解决页面初始化只显示 57.5 的问题） 👇👇👇
+  this.list.forEach(item => {
+    const arr = item.sku_infos || []
+    arr.forEach(item2 => {
+      if ((item2.checked === true || item2.checked === 1) && item2.price) {
+        this.fullPrice += Number(item2.price)
+      }
+    })
+  })
+  this.fullPrice = Math.round(this.fullPrice * 100) / 100 // 保持精度
+  // 👆👆👆 新增完毕 👆👆👆
+  
             this.calcChannelFullPrice()
           } else if (this.num1 == 5) {
             this.list = res.data.details.spu_specs

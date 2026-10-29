@@ -39,9 +39,13 @@
 
               <div class="priceBox" v-else><span>￥</span>
 
-                {{ item.detail?.isMultiSpec == 1 ? item.fullPrice : item.detail ? item.detail.salePrice : num1 == 2 ?
+                <!-- {{ item.detail?.isMultiSpec == 1 ? item.fullPrice : item.detail ? item.detail.salePrice : num1 == 2 ?
                   item.priceHead :
-                  item.sumprice || item.price || item.fullPrice || item.oPrice }}
+                  item.sumprice || item.price || item.fullPrice || item.oPrice }} -->
+
+
+{{ item.fullPrice || item.price || item.detail?.salePrice }}
+
 
                 <span class="quantity">x {{ item.count || item.quantity }}</span>
               </div>
@@ -217,7 +221,8 @@ export default {
     // 去重
     const uniqueMap = new Map();
     goodsData.forEach(item => {
-      const key = item.productId || item.linkId || item.code || item.specifications || JSON.stringify(item);
+      // const key = item.productId || item.linkId || item.code || item.specifications || JSON.stringify(item);
+      const key = item.specifications ? (item.productId + '_' + item.specifications) : JSON.stringify(item);
       if (!uniqueMap.has(key)) {
         uniqueMap.set(key, item);
       }
@@ -230,7 +235,8 @@ export default {
 
     // 格式化数据，添加显示字段
     // 格式化数据，添加显示字段
-    const formattedGoods = Array.from(uniqueMap.values()).map(item => {
+    // const formattedGoods = Array.from(uniqueMap.values()).map(item => {
+      const formattedGoods = goodsData.map(item => {
       // 获取商品名称（兼容多个品牌）
       let goodsName = '';
       if (item.detail) {
