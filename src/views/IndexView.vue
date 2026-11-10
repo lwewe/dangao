@@ -37,51 +37,27 @@
 
     <div style="padding:10px 10px 2px 10px;display: none; ">
       <div style="background-color: rgba(254, 244, 243, 1);border-radius: 10px; font-size: 12px;text-align: center;">
-        <div style="display: flex;justify-content: space-around;padding-top:12px  ;color: rgba(36, 0, 3, 1); padding-bottom: 10px;" >
+        <div
+          style="display: flex;justify-content: space-around;padding-top:12px  ;color: rgba(36, 0, 3, 1); padding-bottom: 10px;">
 
-          <div  v-for="(item3,index) in fenl.slice(0,4)" key="item.id" @click="brandaelectiondetailsadd(index + 1,item3.id)">
+          <div v-for="(item3, index) in fenl.slice(0, 4)" :key="item3.id"
+            @click="brandaelectiondetailsadd(index + 1, item3.id)">
             <div> <img :src="item3.img" alt="" style="width:50px;height:50px"></div>
-            <div style="font-weight: 600;">{{item3.title}}</div>
+            <div style="font-weight: 600;">{{ item3.title }}</div>
           </div>
 
-          <!-- <div @click="brandaelectiondetailsadd(2)">
-            <div> <img src="../assets/icon-1/ic2.png" alt="" style="width:50px;height:50px"></div>
-            <div>面包糕点</div>
-          </div>
 
-          <div @click="brandaelectiondetailsadd(3)">
-            <div> <img src="../assets/icon-1/ic3.png" alt="" style="width:50px;height:50px"></div>
-            <div>饼干甜点</div>
-          </div>
-
-          <div @click="brandaelectiondetailsadd(4)">
-            <div> <img src="../assets/icon-1/ic4.png" alt="" style="width:50px;height:50px"></div>
-            <div>休闲零食</div>
-          </div> -->
 
         </div>
         <div style="display: flex;justify-content: space-around;padding-bottom: 10px  ;">
 
 
-          <div v-for="(item5,index) in fenl.slice(4,9)" key="item.id" @click="brandaelectiondetailsadd(index + 5,item5.id)" >
+          <div v-for="(item5, index) in fenl.slice(4, 9)" :key="item5.id"
+            @click="brandaelectiondetailsadd(index + 5, item5.id)">
             <div> <img :src="item5.img" alt="" style="width:50px;height:50px"></div>
-            <div style="font-weight: 600;">{{item5.title}}</div>
-          </div>
-<!-- 
-          <div @click="brandaelectiondetailsadd(6)">
-            <div> <img src="../assets/icon-1/ic6.png" alt="" style="width:50px;height:50px"></div>
-            <div>巧克力</div>
+            <div style="font-weight: 600;">{{ item5.title }}</div>
           </div>
 
-          <div @click="brandaelectiondetailsadd(7)">
-            <div> <img src="../assets/icon-1/ic7.png" alt="" style="width:50px;height:50px"></div>
-            <div>新鲜水果</div>
-          </div>
-
-          <div @click="brandaelectiondetailsadd(8)">
-            <div> <img src="../assets/icon-1/ic8.png" alt="" style="width:50px;height:50px"></div>
-            <div>饮品</div>
-          </div> -->
 
         </div>
 
@@ -131,31 +107,43 @@
       <div class="cakeBrand">
         <div class="brandtitleBox">
           <div class="title"><span>品牌</span><span style="color: #342C2C;margin-left: 5px;font-size: 11px;">|</span>
-            <span class="bgadd" @click="addgo(1)">生日蛋糕</span><span class="bgadds" @click="addgo(2)">电子券</span>
+            <span class="bgadd" @click="addgo(1)">饮品直冲</span><span class="bgadds" @click="addgo(2)">电子券</span>
           </div>
-          <div class="seeAll" @click="toOtherNext('/allCakeBrand')">
+          <div class="seeAll" @click="toOtherNext('/orderfood?active=2')">
 
             <div
-              style="background-color: #F99E9B;border-radius: 50%;text-align: center;line-height: 22px; width: 18px;height:18px;color: #ffffff;">
+              style="background-color: #F99E9B; border-radius: 50%;text-align: center;line-height: 22px; width: 18px;height:18px;color: #ffffff;">
               <van-icon name="arrow" />
             </div>
           </div>
         </div>
-        <div class="listShop" v-if="brandList.length > 0">
+        <!-- <div class="listShop" >
           <van-swipe indicator-color="#BA6466" @change="onChangeShop" :show-indicators=false>
-            <van-swipe-item v-for="(item, index) in Math.ceil(brandList.length / 5)" :key="item">
+            <van-swipe-item v-for="(item, index) in Math.ceil(drinkBrandList.length / 5)" :key="item">
               <div class="cakeBoxImg">
-                <div class="imgMax2" v-for="item2 in brandList.slice(index * 5, (index + 1) * 5)" :key="item2.id"
+                <div class="imgMax2" v-for="item2 in drinkBrandList.slice(index * 5, (index + 1) * 5)" :key="item2.id"
                   @click="toBrandDetail(item2.id, item2.brand_id)">
                   <div class="imgMax">
-                    <img class="img" :src="item2.image_path" alt="">
+                    <img class="img" :src="item2.tbimg" alt="">
                   </div>
-                  <!--                  {{item2.name}}-->
+                   
                 </div>
               </div>
             </van-swipe-item>
           </van-swipe>
+        </div> -->
+
+        <div class="listShop">
+          <div class="cakeBoxImg">
+            <div class="imgMax2" v-for="item2 in drinkBrandList.slice(0, 5)" :key="item2.id"
+              @click="toBrandDetail(item2.id, item2.brand_id)">
+              <div class="imgMax">
+                <img class="img" :src="item2.tbimg" alt="">
+              </div>
+            </div>
+          </div>
         </div>
+
       </div>
 
       <!--  -->
@@ -165,6 +153,38 @@
       </div>
       <!--  -->
     </div>
+    <!-- add 随心兑 -->
+    <div v-if="sxfcardfag === 1">
+      <div class="exchange-section">
+        <div class="exchange-card">
+
+          <div class="exchange-header">
+            <div class="header-left">
+              <span class="main-title">随心兑</span>
+              <span class="sub-title">| 蛋糕、饮品、甜品</span>
+            </div>
+            <div class="seeAll" style="padding-right: 4px;" @click="toOtherNext('/orderfood?active=4')">
+
+              <div
+                style="background-color: #F99E9B;font-size: 12px; border-radius: 50%;text-align: center;line-height: 22px; width: 18px;height:18px;color: #ffffff;">
+                <van-icon name="arrow" />
+              </div>
+            </div>
+          </div>
+
+          <div class="exchange-grid">
+            <div class="grid-item" v-for="(item, index) in brandnewlist.slice(0, 10)" :key="item.id">
+
+              <div class="img-box img-box-circle" @click="toSuixd(item.brand_id)">
+                <img :src="item.logo" alt="">
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- add 随心兑 -->
     <!--分类-->
     <div class="tabbar" :class="{ tabbar2: show }" ref="topScroll" v-if="tabList.length > 0">
       <div v-if="isLoading" class="isTab" :style="'width:' + tabList.length * 90 + 'px;'"></div>
@@ -190,7 +210,7 @@ import NavigationTab from "@/components/NavigationTab.vue";
 import { getCakeIndex, getCakeProductList } from "@/api";
 import City from "@/components/City.vue";
 import ShopList from "@/components/ShopList.vue";
-import { getIsShowOder, getIsShowOders } from '@/api/service'
+import { getIsShowOder, getIsShowOders, sxfcard, brandnew, ElectronLists } from '@/api/service'
 export default {
   name: "IndexView",
   components: {
@@ -199,7 +219,10 @@ export default {
     NavigationTab
   },
   data() {
-    return {fenl:'',
+    return {
+      drinkBrandList: [],
+      sxfcardfag: '',
+      fenl: '',
       gonggao: "",
       flag: 0,
       searchValue: "",
@@ -220,10 +243,25 @@ export default {
       isShow: false,
       isCityId: true,
       kefu: "",
-      addbanner: ''
+      addbanner: '',
+      brandnewlist: []
     }
   },
   methods: {
+    toSuixd(ids) {
+      this.$router.push({ path: "/orderfood", query: { active: 4, brandId: ids } })
+    },
+
+    sxfcards() {
+      sxfcard().then(res => {
+        if (res.code == 200) {
+          this.sxfcardfag = res.data.sxf
+        }
+      })
+    },
+
+
+
     toNexts(path) {
       this.$router.push(path)
     },
@@ -239,12 +277,12 @@ export default {
     tokf() {
       window.location.href = this.kefu
     },
-    brandaelectiondetailsadd(vals,id){
-      if(vals == 1){
-       this.$router.push({ path: '/brandselectiondetailsone',query:{classfynum:vals,id:id}})
+    brandaelectiondetailsadd(vals, id) {
+      if (vals == 1) {
+        this.$router.push({ path: '/brandselectiondetailsone', query: { classfynum: vals, id: id } })
 
-      }else{
-       this.$router.push({ path: '/brandselectiondetailsadd',query:{classfynum:vals,id:id}})
+      } else {
+        this.$router.push({ path: '/brandselectiondetailsadd', query: { classfynum: vals, id: id } })
 
       }
     },
@@ -256,12 +294,18 @@ export default {
       getCakeIndex().then(res => {
         this.loadingflag = false
         if (res.code == 200) {
+
+          this.drinkBrandList = res.data.zhichong || []
           this.banneerList = res.data.nav
           this.tabList = res.data.classify
           this.gonggao = res.data.gonggao.gonggao
           this.funList = res.data.datu;
           this.fenl = res.data.fenlei;
-          // this.addbanner = res.data.datu.title
+          console.log(res.data.shuixinduei)
+          this.brandnewlist = res.data.shuixinduei
+
+
+
           this.addbanner = res.data.datu.filter(item => item.title == '生日蛋糕')
           this.xfunList = res.data.xiaotu
           this.brandList = res.data.brand
@@ -274,7 +318,9 @@ export default {
       })
     },
     toBrandDetail(id, brandId) {
-      this.$router.push({ path: "/brandDetail", query: { id, brandId: id } })
+      // this.$router.push({ path: "/brandDetail", query: { id, brandId: id } })
+      this.$router.push({ path: "/directCharge", query: { id, brandId: id } })
+
     },
     //头部fixed定位
     showSearch() {
@@ -306,7 +352,10 @@ export default {
     addgo(n) {
       var path = ""
       if (n == 1) {
-        path = "/birthdayCake"
+        path = "/orderfood?active=2"
+      }
+      else if (n == 2) {
+        path = "/orderfood?active=1"
       }
       else {
 
@@ -422,12 +471,46 @@ export default {
     // this.loadingflag = false
     this.cityId = sessionStorage.getItem("cityId")
 
-    setTimeout(() => {
-      this.getCakeIndexList()
-    }, 1000)
+
+    // this.getCakeIndexList()
+
     this.kefu = localStorage.getItem("kefu")
+
+    this.sxfcards()
+
+
+    if (sessionStorage.getItem("cityName") && sessionStorage.getItem("cityId")) {
+      this.getCakeIndexList()
+    }
+
+  },
+  watch: {
+    // 监听 Vuex 中的 token 变化
+    '$store.state.token': {
+      handler(newVal) {
+        if (newVal) {
+          this.sxfcards()
+          // 登录成功后，只要有 token，直接强拉接口
+          this.getCakeIndexList();
+
+        }
+      },
+      immediate: false
+    },
+    // 监听路由（如果你登录后是 replace 回首页）
+    $route(to, from) {
+      // 如果是从登录页回到首页
+      if ((to.path === '/' || to.path === '/index') && from.path !== '/') {
+        this.sxfcards()
+        // 把刚才的 alert 去掉，改用这里拉接口
+        this.getCakeIndexList();
+
+      }
+    }
   },
   mounted() {
+    this.sxfcards()
+
     setTimeout(() => {
       if (!sessionStorage.getItem("cityName")) {
         this.loadingflag = false
@@ -737,24 +820,60 @@ export default {
     }
   }
 
+  // .cakeBoxImg {
+  //   display: flex;
+  //   align-items: flex-end;
+  //   flex-wrap: wrap;
+  //   gap: 10px 0px;
+  //   margin-top: 10px;
+
+  //   .imgMax2 {
+  //     width: 20%;
+  //   }
+
+  //   .imgMax {
+  //     width: 60px;
+  //     height: 60px;
+  //     margin: auto;
+  //     border-radius: 10px;
+  //     overflow: hidden;
+  //     margin-right: 10px;
+
+  //     img {
+  //       width: 100%;
+  //       height: 100%;
+  //       object-fit: contain;
+  //       /* 保证图片完整显示 */
+  //     }
+  //   }
+  // }
   .cakeBoxImg {
     display: flex;
-    align-items: flex-end;
-    flex-wrap: wrap;
-    gap: 10px 0px;
+    align-items: center;
+    justify-content: space-between;
+    /* 🚨 关键：让这 5 个图标均匀分布在一行 */
     margin-top: 10px;
+    padding: 0 2px 0 0;
 
     .imgMax2 {
-      width: 20%;
+      width: 18%;
+      /* 🚨 关键：5个的话，每个宽度大概 18% 最合适，留点间隙 */
+      display: flex;
+      justify-content: center;
     }
 
     .imgMax {
-      // width: 60px;
+      width: 60px;
       height: 60px;
-      margin: auto;
-      border-radius: 5px;
+      border-radius: 10px;
       overflow: hidden;
-      margin-right: 5px;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        /* 保证图片完整显示 */
+      }
     }
   }
 
@@ -887,4 +1006,112 @@ export default {
   padding: 1px 16px 2px;
   border-radius: 30px;
 }
+
+// suixn
+/* 随心兑 模块样式 */
+.exchange-section {
+  padding: 10px;
+  margin-top: -10px;
+}
+
+.exchange-card {
+  background-color: #FFF1F1;
+  border-radius: 12px;
+  padding: 10px 8px 12px 8px;
+  box-sizing: border-box;
+
+  .exchange-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+
+    .header-left {
+      padding: 0 5px;
+      display: flex;
+      align-items: baseline;
+
+      .main-title {
+        font-size: 15px;
+        font-weight: bold;
+        color: #000000;
+      }
+
+      .sub-title {
+        font-size: 12px;
+        color: #666;
+        margin-left: 6px;
+      }
+    }
+
+    .header-right {
+      width: 24px;
+      height: 24px;
+      background-color: #F99E9B;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 12px;
+    }
+  }
+
+  .exchange-grid {
+    display: flex;
+    flex-wrap: wrap;
+    /* 改为 flex-start 左对齐，防止第二行元素分散 */
+    justify-content: flex-start;
+    /* 上下间距 12px，左右间距 0（由宽度计算控制） */
+    row-gap: 12px;
+    column-gap: 0;
+
+    .grid-item {
+      /* 一行5个：100% / 5 = 20% */
+      width: 20%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+
+      .img-box {
+        /* 宽度占满 20% 的格子，并扣除左右边距 */
+        width: 85%;
+        aspect-ratio: 1 / 1;
+        background-color: transparent;
+        /* 默认透明，防止有底色 */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+
+        img {
+          width: 100%;
+          height: 100%;
+          /* 如果原图是圆形的，用 contain 不裁剪；如果原图是方形带白底，用 cover 裁剪成圆形 */
+          object-fit: contain;
+        }
+      }
+
+      /* 针对你的截图，强制变成圆形 */
+      .img-box-circle {
+        background-color: #fff;
+        border-radius: 8px;
+        /* 变成圆形 */
+        overflow: hidden;
+        padding: 0;
+        /* 原图自带背景，不需要内边距 */
+        box-shadow: none;
+        /* 去除阴影，因为你截图里的原图自带立体感 */
+
+        img {
+          /* 如果原图是正方形，强制铺满并裁剪成圆形 */
+          object-fit: cover;
+        }
+      }
+    }
+  }
+}
+
+// sunuisx
 </style>

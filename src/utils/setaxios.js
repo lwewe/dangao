@@ -5,8 +5,8 @@ const instance = axios.create({
     baseURL: "/api/api.php/",
     // baseURL: "/api/zxapi.php/",
     // timeout: 10000,
-    headers:{
-       " Content-Type":"application/x-www-form-urlencoded;charset=utf-8"
+    headers: {
+        " Content-Type": "application/x-www-form-urlencoded;charset=utf-8"
     }
 });
 // const defaultOpt = { login: true };
@@ -24,31 +24,50 @@ function baseRequest(options) {
         const data = res.data || {};
 
         if (res.status !== 200)
-            return Promise.resolve({ msg: "请求失败", res, data,code:res.data.code });
+            return Promise.resolve({ msg: "请求失败", res, data, code: res.data.code });
 
         // if ([410000, 410001, 410002].indexOf(data.status) !== -1) {
         //     // toLogin();
         //     return Promise.reject({ msg: res.data.msg, res, data, toLogin: true });
         // }
-        else if (res.status === 200&&res.data.code == 200) {
-            return Promise.resolve({ msg: res.data.msg||"操作成功", data:data.data,code:res.data.code,status:data.status||200});
+        else if (res.status === 200 && res.data.code == 200) {
+            return Promise.resolve({ msg: res.data.msg || "操作成功", data: data.data, code: res.data.code, status: data.status || 200 });
         } else if (res.data.code == "-1") {
-            if(options.url=="Cake/details"||options.url=="Cake/show"||options.url=="Coupons/detail"){
-                return Promise.resolve({ msg: res.data.msg, res, data,code:res.data.code });
+
+            if (options.url == "Cake/details" || options.url == "Cake/show" || options.url == "Coupons/detail" || options.url.includes("login") || options.url.includes("Login")) {
+                return Promise.resolve({ msg: res.data.msg, res, data, code: res.data.code });
             }
+
             toast("请先登录")
             // localStorage.removeItem("token")
             // localStorage.removeItem("uid")
             var ua = window.navigator.userAgent.toLowerCase();
+
             if (ua.match(/MicroMessenger/i) == "micromessenger") {
-                router.replace("/quickLogin")
+                // ★ 2. 加上 .catch 防止重复跳转报错阻断代码
+                router.replace("/quickLogin").catch(err => { })
                 return true;
             } else {
-                router.replace("/login")
+                // ★ 2. 加上 .catch 防止重复跳转报错阻断代码
+                router.replace("/login").catch(err => { })
                 return false;
             }
+
+            // if(options.url=="Cake/details"||options.url=="Cake/show"||options.url=="Coupons/detail"){
+            //     return Promise.resolve({ msg: res.data.msg, res, data,code:res.data.code });
+            // }
+            // toast("请先登录")
+
+            // var ua = window.navigator.userAgent.toLowerCase();
+            // if (ua.match(/MicroMessenger/i) == "micromessenger") {
+            //     router.replace("/quickLogin")
+            //     return true;
+            // } else {
+            //     router.replace("/login")
+            //     return false;
+            // }
         } else {
-            return Promise.resolve({ msg: res.data.msg, res, data,code:res.data.code });
+            return Promise.resolve({ msg: res.data.msg, res, data, code: res.data.code });
         }
     });
 }
@@ -68,7 +87,7 @@ const request = ["post", "put", "patch"].reduce((request, method) => {
     request[method] = (url, data = {}, options = {}) => {
         return baseRequest(
             Object.assign({ url, data, method },
-                
+
                 // defaultOpt,
                 options)
         );

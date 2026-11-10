@@ -70,7 +70,7 @@
               <div>共1件商品</div>
               <div>
                 总计: <span class="priceNum"><span style="font-size: 12px">￥</span>{{ Number(item.order.zongji).toFixed(2)
-                  }}</span><span class="first">元</span>
+                }}</span><span class="first">元</span>
               </div>
             </div>
             <div class="button">
@@ -78,75 +78,65 @@
             </div>
           </div>
         </template>
-         
-          <div class="listItem2" v-else-if="item.ord_bs == 5 && item.flag == 3" @click="toDetail(item.id)">
-            <div class="orderNo">
-              <div class="orderNum orderTime">订单号:{{ item.order_no }}</div>
-              <!--    订单状态-->
-              <!--              订单状态:0-待确认，1- 已确认，2-已完成，3- 已取消-->
-              <div v-if="item.flag == 3">
-                <div class="otherType" v-if="item.detail.status == 3">已取消</div>
-                <div class="otherType" v-if="item.detail.status == 2">已完成</div>
-                <div class="otherType" v-if="item.detail.status == 1">已确认</div>
-                <div class="otherType" v-if="item.detail.status == 0">待确认</div>
-              </div>
-              <div v-if="item.flag == 4">
-                <div class="otherType" v-if="item.state == 4">已取消</div>
-                <div class="otherType" v-if="item.state == 3">已完成</div>
-                <div class="otherType" v-if="item.state == 2">已发货</div>
-                <div class="otherType" v-if="item.state == 1">已确认</div>
-                <div class="otherType" v-if="item.state == 0">待确认</div>
-              </div>
-            </div>
-            <!--      影片-->
-            <div class="filmBox" v-for="(item3, index3) in item.flag == 4 ? item.content : item.detail.product" :key="index3"
-              style="margin-bottom: 5px">
-              <div class="film">
-                <div class="filmImg">
-                  <img class="img" :src="item.flag == 4 ? item3.product.image_path : item3.image_path" alt="">
-                </div>
-                <div class="rightBox">
-                  <div class="filmName">{{ item.flag == 4 ? item3.product.title : item3.product_name }}</div>
-                  <div class="startTime textBox" style="margin-top: 0px">
-                    {{ item.flag == 4 ? item3.xinghao.name : item3.spec_name }}
-                  </div>
-                </div>
-              </div>
-            </div>
 
-            <!--      价格-->
-            <div class="priceBox" style="margin-top: 3px">
-              <div>共{{ item.detail.product.length }}件商品</div>
-              <div>
-                总计: <span class="priceNum"><span style="font-size: 12px">￥</span>{{
-                  item.flag == 4 ? item.order.zongji : item.detail.final_amount
-                }}</span><span class="first">元</span>
+        <div class="listItem2" v-else-if="item.ord_bs == 5 && item.flag == 3" @click="toDetail(item.id)">
+          <div class="orderNo">
+            <div class="orderNum orderTime">订单号:{{ item.order_no }}</div>
+            <!--    订单状态-->
+            <!--              订单状态:0-待确认，1- 已确认，2-已完成，3- 已取消-->
+            <div v-if="item.flag == 3">
+              <div class="otherType" v-if="item.detail.status == 3">已取消</div>
+              <div class="otherType" v-if="item.detail.status == 2">已完成</div>
+              <div class="otherType" v-if="item.detail.status == 1">已确认</div>
+              <div class="otherType" v-if="item.detail.status == 0">待确认</div>
+            </div>
+            <div v-if="item.flag == 4">
+              <div class="otherType" v-if="item.state == 4">已取消</div>
+              <div class="otherType" v-if="item.state == 3">已完成</div>
+              <div class="otherType" v-if="item.state == 2">已发货</div>
+              <div class="otherType" v-if="item.state == 1">已确认</div>
+              <div class="otherType" v-if="item.state == 0">待确认</div>
+            </div>
+          </div>
+          <!--      影片-->
+          <div class="filmBox" v-for="(item3, index3) in item.flag == 4 ? item.content : item.detail.product"
+            :key="index3" style="margin-bottom: 5px">
+            <div class="film">
+              <div class="filmImg">
+                <img class="img" :src="item.flag == 4 ? item3.product.image_path : item3.image_path" alt="">
+              </div>
+              <div class="rightBox">
+                <div class="filmName">{{ item.flag == 4 ? item3.product.title : item3.product_name }}</div>
+                <div class="startTime textBox" style="margin-top: 0px">
+                  {{ item.flag == 4 ? item3.xinghao.name : item3.spec_name }}
+                </div>
               </div>
             </div>
-            <!--          <div class="button">-->
-            <!--            <div class="cancel">删除订单</div>-->
-            <!--            &lt;!&ndash;          <div class="cancel toPay">去支付</div>&ndash;&gt;-->
-            <!--          </div>-->
           </div>
-        
+
+          <!--      价格-->
+          <div class="priceBox" style="margin-top: 3px">
+            <div>共{{ item.detail.product.length }}件商品</div>
+            <div>
+              总计: <span class="priceNum"><span style="font-size: 12px">￥</span>{{
+                item.flag == 4 ? item.order.zongji : item.detail.final_amount
+              }}</span><span class="first">元</span>
+            </div>
+          </div>
+
+        </div>
+
         <!--    点餐-->
 
-        <div class="listItem2" v-else-if="item.ord_bs == 4" @click="toorderOrder(item.id, item.pf, item.storeId, item.type)">
+        <div class="listItem2" v-else-if="item.ord_bs == 4"
+          @click="toorderOrder(item.id, item.pf, item.storeId, item.type)">
           <div class="orderNo">
             <div class="orderNum orderTime">订单号:{{ item.orderid }}</div>
-            <!--    订单状态-->
+
             <div>
-              <!--          <div class="time">支付剩余时间 10:25</div>-->
-              <!--                    <div class="otherType">已取消</div>-->
-              <!--              <div class="otherType" v-if="item.status==0">待付款</div>-->
-              <!--              <div class="otherType" v-if="item.status==1">已付款待出餐</div>-->
-              <!--              <div class="otherType" v-if="item.status==2">出餐中</div>-->
-              <!--              <div class="otherType" v-if="item.status==3">出餐成功</div>-->
-              <!--              <div class="otherType" v-if="item.status==4">确认收货</div>-->
-              <!--              <div class="otherType" v-if="item.status==5">出餐失败退款</div>-->
-              <!--              <div class="otherType" v-if="item.status==10">订单关闭</div>-->
+
               <div class="otherType">{{ item.statusstr }}</div>
-              <!--                    <div class="otherType">待使用</div>-->
+
             </div>
           </div>
           <!--      影片-->
@@ -162,11 +152,7 @@
                   item2.goodsName
                 }}
                 </div>
-                <!-- <div class="startTime textBox" style="margin-top: 0px">
-                  {{
-                    item2.listname  ||  item2.goodlistname  ||  item2.listname||item2.config
-                  }}
-                </div> -->
+
               </div>
             </div>
           </div>
@@ -206,6 +192,42 @@
           <!--            &lt;!&ndash;          <div class="cancel toPay">去支付</div>&ndash;&gt;-->
           <!--          </div>-->
         </div>
+
+        <!--    爷爷不泡茶 ord_bs == 10-->
+        <div class="listItem2" v-else-if="item.ord_bs == 10" @click="toTeaOrder(item.id)">
+          <div class="orderNo">
+            <div class="orderNum orderTime">订单号:{{ item.order_no }}</div>
+            <div>
+              <div class="otherType" v-if="Number(item.orderstatus) == 4">已退款</div>
+              <div class="otherType" v-else-if="Number(item.orderstatus) == 2">已完成</div>
+              <div class="otherType" v-else>处理中</div>
+            </div>
+          </div>
+          <div class="filmBox" style="margin-bottom: 5px">
+            <div class="film">
+              <div class="filmImg">
+                <img class="img"
+                  :src="(item.brandInfo && item.brandInfo.logoThumbUrl) ? item.brandInfo.logoThumbUrl : 'http://yxfmm.bjyxfl.com/imgs/default-image.png'"
+                  alt="">
+              </div>
+              <div class="rightBox">
+                <div class="filmName">{{ item.shopName || item.brandName }}</div>
+                <div class="startTime textBox" style="margin-top: 0px">{{ item.brandName }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="priceBox" style="margin-top: 3px">
+            <div>
+              共{{ safeParse(item.fuli).length }}件商品
+               
+            </div>
+            <div>
+              总计: <span class="priceNum"><span style="font-size: 12px">￥</span>{{ item.total_fee || item.price
+                }}</span><span class="first">元</span>
+            </div>
+          </div>
+        </div>
+
         <!--    商品-->
         <div class="listItem2" @click="toShopOrder(item.id)" v-else-if="item.ord_bs == 3">
           <div class="orderNo">
@@ -323,6 +345,21 @@ export default {
     }
   },
   methods: {
+    safeParse(str) {
+      try {
+        const v = JSON.parse(str || '[]')
+        return Array.isArray(v) ? v : []
+      } catch (e) {
+        return []
+      }
+    },
+    // 爷爷不泡茶详情跳转（路径按你项目实际路由改）
+    toTeaOrder(id) {
+      // window.location.href = this.$store.state.Shopbase + "/TeaOrderDetail?id=" + id  +  "&token=" + localStorage.getItem("token")
+
+       this.$router.push({ path: "/TeaOrderDetail", query: { id } })
+      // window.location.href = this.$store.state.Shopbase + "/TeaOrderDetail?id=" + id + "&token=" + localStorage.getItem("token")
+    },
     toShopOrder(id) {
       window.location.href = this.$store.state.Shopbase + "/orderDetail?id=" + id + "&token=" + localStorage.getItem("token")
     },

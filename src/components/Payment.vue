@@ -28,6 +28,8 @@
               <span v-if="item.pid==8">图书券</span>
               <span v-if="item.pid==9">悦享卡</span>
               <span v-if="item.pid==14">工会消费券</span>
+              <span v-if="item.pid==15">超级A卡</span>
+              <span v-if="item.pid==16">蛋糕A卡</span>
             </p>
             <p>{{ item.price }}点</p>
             <p>{{ item.num }} / {{ timestampToTime(item.end_time) }}到期</p>

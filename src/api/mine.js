@@ -72,3 +72,11 @@ export function getCakeOrderdetail(data) {
         ...data
     });
 }
+
+export function DangaoIrder(data) {
+    return setaxios.post("Dangao/order", {
+        channel_no:store.state.channel_no,
+        token:localStorage.getItem("token"),
+        ...data
+    });
+}

@@ -27,7 +27,7 @@
           <div class="tips">提前点单 到店自取</div>
         </div>
         <!-- <div class="line" v-if="num2==1&&num1!=7"></div> -->
-        <div class="leftBox " @click="goaddress"
+        <div class="leftBox " @click="goaddress" style="display: none;"
           :class="{ dsp: num1 == 6 || num1 == 4 || num1 == 5 || num1 == 7 || num1 == 8 || num1 == 3 }">
           <!-- v-if="num2==1&&num1!=7" -->
           <div class="topRight">
@@ -232,7 +232,7 @@ export default {
 }
 
 .leftBox {
-  width: 50%;
+  width: 100%;
 
   .topRight {
     display: flex;

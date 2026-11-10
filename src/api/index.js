@@ -42,6 +42,9 @@ export function getCakeProductList(data) {
         ...data
     });
 }
+
+
+
 // 生日蛋糕
 export function getCakeBirthdayList(data) {
     return setaxios.post("Cake/birthday", {

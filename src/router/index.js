@@ -12,6 +12,10 @@ import IndexView from "@/views/IndexView.vue";
 import ShopCart from "@/views/cart/ShopCart.vue";
 import PersonCenter from "@/views/mine/PersonCenter.vue";
 import OrderInfo from "@/views/order/OrderInfo.vue";
+import GetpayqrCode  from "@/views/order/GetpayqrCode.vue";
+import GetpayqrCodeorder  from "@/views/order/GetpayqrCodeorder.vue";
+import TeaOrderDetail  from "@/views/order/TeaOrderDetail.vue";
+
 import OrderDetail from "@/views/order/OrderDetail.vue";
 import OrderPay from '@/views/order/OrderPay.vue';
 import OrderPaynew from '@/views/order/OrderPaynew.vue';
@@ -147,7 +151,28 @@ const routes = [
         meta: {
             title: '我的订单'
         }
-    }, {
+    },{
+        path: '/GetpayqrCode',
+        component: GetpayqrCode,
+        meta: {
+            title: '展示码'
+        }
+    },
+    {
+        path: '/GetpayqrCodeorder',
+        component: GetpayqrCodeorder,
+        meta: {
+            title: '订单'
+        }
+    },
+     {
+        path: '/TeaOrderDetail',
+        component: TeaOrderDetail,
+        meta: {
+            title: '订单详情'
+        }
+    },
+    {
         path: '/orderDetail',
         component: OrderDetail,
         meta: {

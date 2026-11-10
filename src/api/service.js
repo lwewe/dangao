@@ -219,6 +219,50 @@ export function getIsShowOders(data) {
     })
 }
 
+export function sxfcard(data) {
+    return setaxios.post("Dangao/sxfcard", {
+        channel_no:store.state.channel_no,
+        token: localStorage.getItem("token"),
+        ...data
+    });
+}
+export function brandnew(data) {
+    return setaxios.post("Dangao/brand", {
+        channel_no:store.state.channel_no,
+        token: localStorage.getItem("token"),
+        ...data
+    });
+}
+export function DangaoStore(data) {
+    return setaxios.post("Dangao/store", {
+        channel_no:store.state.channel_no,
+        token: localStorage.getItem("token"),
+        ...data
+    });
+}
+export function getPayQrCode(data) {
+    return setaxios.post("Dangao/getqrcode", {
+        channel_no:store.state.channel_no,
+        token: localStorage.getItem("token"),
+        ...data
+    });
+}
+export function DangaoOrderlist(data) {
+    return setaxios.post("Dangao/orderlist", {
+        channel_no:store.state.channel_no,
+        token: localStorage.getItem("token"),
+        ...data
+    });
+}
+
+export function ElectronLists(data) {
+    return setaxios.post("/Electron/lists", {
+        channel_no:store.state.channel_no,
+        token: localStorage.getItem("token"),
+        ...data
+    });
+}
+
 // 创建订单
 export function create_order(data) {
     return setaxios.post("Diancan/create_order", {

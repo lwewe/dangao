@@ -1,6 +1,20 @@
 import Vue from 'vue'
 import App from './App.vue'
 import router from "./router";
+
+import VueRouter from 'vue-router'
+
+// ★ 解决 vue-router 3.x 重复跳转报错，防止阻断后续代码执行
+const originalPush = VueRouter.prototype.push;
+VueRouter.prototype.push = function push(location) {
+  return originalPush.call(this, location).catch(err => err);
+};
+const originalReplace = VueRouter.prototype.replace;
+VueRouter.prototype.replace = function replace(location) {
+  return originalReplace.call(this, location).catch(err => err);
+};
+// ★ 加到这里结束
+
 // 时间格式化过滤器
 import moment from 'moment';
 Vue.filter('dateFormat',(dateStr,pattern = 'YYYY-DD-MM HH:mm:ss')=>{
