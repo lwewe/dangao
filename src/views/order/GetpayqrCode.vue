@@ -108,6 +108,7 @@ export default {
     return { orderList: [], // 存放订单列表
       loading: true,
       brandId: '',
+      brandIds:'',
       shopId: '',
       brandName: '未命名品牌',
       shopName: '未命名门店',
@@ -126,6 +127,7 @@ export default {
   created() {
     const query = this.$route.query;
     this.brandId = query.brandId || '';
+    this.brandIds = query.brandIds || '';
     this.shopId = query.shopId || '';
     this.brandName = query.brandName || '未命名品牌';
     this.shopName = query.shopName || '未命名门店';
@@ -141,7 +143,7 @@ export default {
   },
   methods: {
     moreOrder(){
-      this.$router.push({ path: "/GetpayqrCodeorder" })
+      this.$router.push({ path: "/GetpayqrCodeorder",query:{brandId:this.brandIds}})
     },
         // 获取订单列表
     getOrderList() {
@@ -149,7 +151,7 @@ export default {
       const params = {
         pageno: 1,
         pagesize: 10,
-        brand_id: this.brandId // 如果你后端需要传 shopId，这里换成 shopId
+        brand_id: this.brandIds // 如果你后端需要传 shopId，这里换成 shopId
       };
 
       DangaoOrderlist(params).then(res => {

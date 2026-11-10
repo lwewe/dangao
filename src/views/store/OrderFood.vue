@@ -399,7 +399,7 @@ export default {
       this.showAllBrands = !this.showAllBrands;
     },
     selectBrand(val, id) {
-      console.log(val.logo)
+      console.log(val)
       this.logoImg = val.logo
       this.currentBrandId = id;
       this.showAllBrands = false; // 选完品牌后收起面板
@@ -417,7 +417,8 @@ export default {
       this.$router.push({
         path: '/GetpayqrCode', // 你的付款码页面路由
         query: {
-          brandId: item.id || this.currentBrandId, // 如果有品牌ID就用，没有就用当前选中的
+          brandIds:this.currentBrandId,
+          brandId: item.id, // 如果有品牌ID就用，没有就用当前选中的
           shopId: item.shopId,
           brandName: item.brandName || '好利来',        // 品牌名称
           shopName: item.name,                         // 门店名称
