@@ -4,7 +4,7 @@
     <ReturnBack :rcolor="'#fff'" :bcolor="'#00000087'"></ReturnBack>
     <div class="picbox">
       <div class="logo">
-        <img class="img" :src=" webinfo.weblogo" alt="">
+        <img class="img" :src="webinfo.fmmweblogo" alt="">
       </div>
       <!-- <img src="../assets/02.png" alt=""> -->
       <!-- {{ webinfo }} -->

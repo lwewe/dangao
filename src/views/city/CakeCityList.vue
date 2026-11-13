@@ -168,6 +168,17 @@ export default {
           }
         }
       })
+
+       //   2. 新增：判断如果是随心兑页面过来的
+      if (this.$route.query.from === 'orderfood') {
+        this.$router.replace({ 
+          path: '/orderfood', 
+          query: { active: 4, from: 'orderfood' } 
+        });
+        return; // 阻断下面的 this.$router.go(-1)，直接返回并刷新
+      }
+      //xnzengjiesu
+
       this.$router.go(-1)
     },
     goindex() {

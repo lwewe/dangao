@@ -302,7 +302,7 @@ export default {
       if (id == 2) {
         window.location.href = this.$store.state.base + "/payPassword" + "?token=" + localStorage.getItem("token")
       } else if (id == 3) {
-        window.location.href = this.$store.state.Shopbase+"/userGuide"
+        window.location.href = this.$store.state.Shopbase1+"/userGuide"
       }else if (id == 5) {
         window.location.href = this.$store.state.base+"/feedback"
       }else if (id == 4) {

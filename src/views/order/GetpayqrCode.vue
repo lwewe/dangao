@@ -20,7 +20,7 @@
             <span class="title">{{ shopName }}</span>
             <div class="desc"><van-icon name="location-o" /> {{ address }}</div>
           </div>
-          <div class="distance" v-if="distance">距离最近<br> {{
+          <div class="distance" v-if="distance">距离直线约<br> {{
             Number(distance) >= 1000
               ? (Number(distance) / 1000).toFixed(2) + 'km'
               : Number(distance).toFixed(0) + 'm'
@@ -32,14 +32,18 @@
     <!-- 提示条 -->
     <div class="notice-bar">
       <van-icon name="volume-o" color="#F99E9B" />
-      <span v-if="brandName == '泸溪河' || brandName == '85度c'">请告知门店使用【HX福利等第三方渠道】扫码收款</span>
-      <span v-else>请告知门店使用【悦享福利等第三方渠道】扫码收款</span>
+      <span v-if="brandName == '泸溪河' || brandName == '85度c'">请告知门店使用【HX福利/第三方渠道】扫码收款</span>
+      <span v-else>请告知门店使用【悦享福利/第三方渠道】扫码收款</span>
     </div>
 
     <!-- 付款码核心展示区 -->
     <div class="pay-code-card">
       <div class="card-title">
-        <van-icon name="replay" class="icon-refresh" @click="getCode" /> 付款码
+        <span>
+          <van-icon name="replay" class="icon-refresh" @click="getCode" /> 付款码
+        </span>
+
+        <span>可用金额：{{ balances }}</span>
       </div>
 
       <div v-if="payCode" class="code-container">
@@ -73,10 +77,10 @@
         </div>
         <div class="more" @click="moreOrder()">查看更多 <van-icon name="arrow" /></div>
       </div>
-       <div class="order-list" v-if="orderList.length > 0">
+      <div class="order-list" v-if="orderList.length > 0">
         <div class="order-item" v-for="(item, index) in orderList" :key="item.id">
           <div class="item-left">
-            <div class="shop-name">{{item.brandName}} </div>
+            <div class="shop-name">{{ item.brandName }} </div>
             <!-- <div><span style="color: #666666;font-size: 12px;">{{ item.shopName }}</span></div> -->
             <div class="order-time">{{ formatTime(item.add_time) }}</div>
           </div>
@@ -100,21 +104,25 @@
   </div>
 </template>
 
-<script>
-import { getPayQrCode,DangaoOrderlist } from '@/api/service'
+ <script>
+import { getPayQrCode, DangaoOrderlist } from '@/api/service'
 import QRCode from 'qrcode';
 export default {
   data() {
-    return { orderList: [], // 存放订单列表
+    return {
+      balances: '',
+      orderList: [],
       loading: true,
+      isFetchingCode: false, // 防止重复请求的锁
       brandId: '',
-      brandIds:'',
+      brandIds: '',
       shopId: '',
       brandName: '未命名品牌',
       shopName: '未命名门店',
       brandLogo: '',
       address: '',
       distance: '',
+      validEndTime: 0, // 记录接口返回的真实过期时间
 
       payCode: '',
       validSeconds: 120,
@@ -133,31 +141,28 @@ export default {
     this.shopName = query.shopName || '未命名门店';
     this.address = query.address || '暂无地址';
     this.distance = query.distance || '';
-    this.brandLogo = query.logo || '';
+    this.brandLogo = query.brandLogo || '';
 
     this.getCode();
     this.getOrderList();
   },
+  
   beforeDestroy() {
     if (this.timer) clearInterval(this.timer);
   },
   methods: {
-    moreOrder(){
-      this.$router.push({ path: "/GetpayqrCodeorder",query:{brandId:this.brandIds}})
+    moreOrder() {
+      this.$router.push({ path: "/GetpayqrCodeorder", query: { brandId: this.brandIds } })
     },
-        // 获取订单列表
     getOrderList() {
-      // 这里传 brandId，代表只查当前品牌的订单；如果你想查当前门店的，可以传 shopId
       const params = {
         pageno: 1,
         pagesize: 10,
-        brand_id: this.brandIds // 如果你后端需要传 shopId，这里换成 shopId
+        brand_id: this.brandIds 
       };
-
       DangaoOrderlist(params).then(res => {
         if (res.code == 200) {
-           this.orderList = res.data.list || [];
-         
+          this.orderList = res.data.list || [];
         } else {
           this.orderList = [];
         }
@@ -167,7 +172,6 @@ export default {
       });
     },
 
-    // 格式化时间戳 (因为你接口返回的是秒级时间戳)
     formatTime(timeStr) {
       if (!timeStr) return '';
       const date = new Date(Number(timeStr) * 1000);
@@ -179,7 +183,6 @@ export default {
       return `${Y}-${M}-${D} ${h}:${m}`;
     },
 
-    // 转换订单状态
     getOrderStatusText(status) {
       const statusMap = {
         '0': '待付款',
@@ -189,23 +192,41 @@ export default {
       };
       return statusMap[status] || '未知状态';
     },
-    getCode() {
+
+        getCode() {
       if (!this.brandId || !this.shopId) {
         this.$toast('缺少门店信息');
         this.loading = false;
         return;
       }
 
+      // 防止疯狂点击刷新
+      if (this.isFetchingCode) return;
+      this.isFetchingCode = true;
       this.loading = true;
 
       getPayQrCode({
-        brandId: this.brandId,
-        shopId: this.shopId
+        brandId: this.brandIds,
+        shopId: this.brandId
       }).then(res => {
         this.loading = false;
+        this.isFetchingCode = false;
+        
         if (res.code == 200 && res.data) {
-          this.payCode = res.data.code;
-          this.validSeconds = res.data.validSeconds || 120;
+          const rawCode = res.data.code;
+
+          // 🚨 核心逻辑：如果是对象，直接 JSON.stringify 整个塞进去；如果是字符串，直接塞
+          if (typeof rawCode === 'object' && rawCode !== null) {
+            this.payCode = JSON.stringify(rawCode);
+          } else {
+            this.payCode = String(rawCode);
+          }
+
+          // 处理有效期，兼容没有 validSeconds 的情况
+          this.validSeconds = Number(res.data.validSeconds) || 240;
+          // 🚨 记录接口的结束时间，用来做精准倒计时
+          this.validEndTime = res.data.validEndTime ? Number(res.data.validEndTime) : 0;
+          this.balances = res.data.balance;
 
           this.generateBarcode(this.payCode);
           this.startCountdown();
@@ -220,22 +241,22 @@ export default {
         }
       }).catch(() => {
         this.loading = false;
+        this.isFetchingCode = false;
         this.$toast('网络异常，请重试');
       });
     },
 
-    // 弹窗显示数字大码
     showNumberCode() {
       if (!this.payCode) return;
+      // 显示时也原样展示
       this.$dialog.alert({
         title: '付款数字码',
-        message: `<div style="font-size: 24px; font-weight: bold; color: #333; letter-spacing: 2px; text-align: center; padding: 10px 0; word-break: break-all;">${this.payCode}</div>`,
+        message: `<div style="font-size: 16px; font-weight: bold; color: #333; letter-spacing: 1px; text-align: left; padding: 10px 0; word-break: break-all;">${this.payCode}</div>`,
         confirmButtonText: '我知道了',
         confirmButtonColor: '#F99E9B'
       });
     },
 
-    // 生成本地 CSS 条形码
     generateBarcode(code) {
       let bars = [];
       for (let i = 0; i < code.length; i++) {
@@ -250,14 +271,17 @@ export default {
     drawCanvasQRCode(code) {
       const canvas = document.getElementById('qrCanvas');
       if (!canvas) return;
+      
+      // 每次生成前清空画布
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // 使用 qrcode 库将字符串生成到 canvas 上
       QRCode.toCanvas(canvas, code, {
         width: 160,
-        margin: 1, // 留白边距
+        margin: 1, 
         color: {
-          dark: '#000000',  // 黑块颜色
-          light: '#ffffff'  // 白底颜色
+          dark: '#000000',  
+          light: '#ffffff'  
         }
       }, function (error) {
         if (error) {
@@ -266,18 +290,29 @@ export default {
       });
     },
 
-    startCountdown() {
+       startCountdown() {
       if (this.timer) clearInterval(this.timer);
-      this.countdown = this.validSeconds;
+
+      // 🚨 优先使用接口返回的 validEndTime (毫秒级时间戳)
+      // 如果接口没给，才用当前时间 + validSeconds 兜底
+      const endTime = this.validEndTime > 0 
+        ? this.validEndTime 
+        : (Date.now() + this.validSeconds * 1000);
+
+      // 先初始化一下显示
+      this.countdown = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
 
       this.timer = setInterval(() => {
-        this.countdown--;
+        const now = Date.now();
+        // 计算剩余的秒数
+        this.countdown = Math.max(0, Math.floor((endTime - now) / 1000));
+
         if (this.countdown <= 0) {
           clearInterval(this.timer);
-          this.getCode();
+          this.getCode(); // 倒计时结束，自动刷新
         }
       }, 1000);
-    }
+    },
   }
 }
 </script>
@@ -401,7 +436,7 @@ export default {
   // min-height: 480px;
 
   .card-title {
-    align-self: flex-start;
+    // align-self: flex-start;
     font-size: 15px;
     font-weight: bold;
     color: #333;
@@ -409,6 +444,8 @@ export default {
     align-items: center;
     gap: 6px;
     margin-bottom: 20px;
+    justify-content: space-between;
+    width: 100%;
 
     .icon-refresh {
       font-size: 18px;
@@ -562,8 +599,9 @@ export default {
         font-size: 14px;
         color: #000000;
         margin-bottom: 4px;
-      
+
       }
+
       .order-time {
         font-size: 12px;
         color: #999;
@@ -582,11 +620,27 @@ export default {
 
       .status {
         font-size: 12px;
-        
-        &.status-0 { color: #FF9800; } /* 待付款 */
-        &.status-2 { color: #4CAF50; } /* 支付成功 */
-        &.status-4 { color: #E91E63; } /* 部分退款 */
-        &.status-5 { color: #999; }    /* 已取消 */
+
+        &.status-0 {
+          color: #FF9800;
+        }
+
+        /* 待付款 */
+        &.status-2 {
+          color: #4CAF50;
+        }
+
+        /* 支付成功 */
+        &.status-4 {
+          color: #E91E63;
+        }
+
+        /* 部分退款 */
+        &.status-5 {
+          color: #999;
+        }
+
+        /* 已取消 */
       }
     }
   }

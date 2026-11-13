@@ -52,14 +52,27 @@
     <div v-if="active == 4" class="exchange-wrap">
 
       <!-- 1. 顶部搜索框 -->
+
+      <!-- 1. 顶部搜索框 + 地区检索 -->
       <div class="search-header">
-        <div class="search-box">
-          <van-icon name="search" class="search-icon" />
-          <input type="text" v-model="searchKeyword" placeholder="输入门店名称" class="search-input"
-            @keyup.enter="onSearch" />
+        <div class="search-area" style="display: flex; align-items: center; gap: 8px;">
+
+          <!-- 🚨 新增：地区检索按钮 -->
+          <div class="area-btn" @click="goToCityList"
+            style="background: #f5f5f5; border-radius: 20px; padding: 6px 12px; font-size: 13px; white-space: nowrap;">
+            {{ searchCity || '选择地区' }} <van-icon name="arrow-down" size="12" />
+          </div>
+
+          <!-- 原有搜索框 -->
+          <div class="search-box"
+            style="flex: 1; display: flex; align-items: center; background: #f5f5f5; border-radius: 20px; padding: 6px 12px;">
+            <van-icon name="search" class="search-icon" style="margin-right: 6px; color: #999;" />
+            <input type="text" v-model="searchKeyword" placeholder="输入门店名称" class="search-input" @keyup.enter="onSearch"
+              style="border: none; background: transparent; outline: none; font-size: 14px; flex: 1;" />
+          </div>
+
         </div>
       </div>
-
       <!-- 2. 品牌区域 (相对定位，用于包裹横滑和下拉面板) -->
       <div class="brand-section">
         <!-- 2.1 横滑区域 -->
@@ -79,15 +92,25 @@
             </div>
           </div>
           <!-- 右侧固定的“全部”按钮 -->
-          <div class="brand-all-btn" :class="{ active: showAllBrands || currentBrandId === 0 }"
-            @click="toggleAllBrands">
+          <div class="brand-all-btn" :class="{ active: showAllBrands || !currentBrandId }" @click="toggleAllBrands">
             全部 <van-icon :name="showAllBrands ? 'arrow-up' : 'arrow-down'" />
           </div>
+
+
         </div>
+
+
+
+
+
 
         <!-- 2.2 点击“全部”后在当前区域展开的面板 -->
         <div class="all-brand-panel" v-show="showAllBrands">
+          <div @click="clearBrandAndLoadAll"
+            style="font-weight: bold; font-size: 14px; text-align: center; padding-bottom: 10px; cursor: pointer;">全部品牌
+          </div>
           <div class="all-brand-grid">
+
             <div class="grid-brand" v-for="brand in exchangeBrands" :key="'all-' + brand.id"
               @click="selectBrand(brand, brand.id)">
               <img :src="brand.logo || brand.img" alt="">
@@ -113,31 +136,36 @@
         </div>
 
         <!-- 状态 3：有数据 -->
-        <div v-else class="shop-card" v-for="(item, index) in exchangeShopList" :key="item.id || index">
-          <div class="shop-logo">
-
-            <img :src="logoImg" alt="">
-          </div>
-          <div class="shop-info">
-            <div class="shop-title-row">
-              <div class="shop-name">{{ item.name }}</div>
-              <div class="shop-distance" v-if="item.distance != null && item.distance !== ''">
-                距您 {{
-                  Number(item.distance) >= 1000
-                    ? (Number(item.distance) / 1000).toFixed(2) + 'km'
-                    : Number(item.distance).toFixed(0) + 'm'
-                }}
+        <template v-else>
+          <div class="shop-card" v-for="(item, index) in exchangeShopList" :key="item.id || index" v-if="item.brand">
+            <div class="shop-logo">
+              <img :src="item.brand.logo || item.logo || logoImg" alt="">
+            </div>
+            <div class="shop-info">
+              <div class="shop-title-row">
+                <div class="shop-name">{{ item.name }}</div>
+                <!-- 距离展示保持不变 -->
+                <div class="shop-distance" v-if="item.distance != null && item.distance !== ''">
+                  距您约 {{
+                    Number(item.distance) >= 1000
+                      ? (Number(item.distance) / 1000).toFixed(2) + 'km'
+                      : Number(item.distance).toFixed(0) + 'm'
+                  }}
+                </div>
+              </div>
+              <div class="shop-address"><van-icon name="location-o" /> {{ item.address }}</div>
+              <div class="shop-tags">
+                <span class="tag">到店兑换</span>
+              </div>
+              <div style="text-align: right;"><span @click="openMap(item)" class="shop-btn1"><img
+                    src="../../assets/dh.png"
+                    style="padding-right: 2px; position: relative;top: 2px; width: 13px;height: 13px; "
+                    alt="">去这里</span>
+                <span class="shop-btn" @click="goExchange(item)">去兑换</span>
               </div>
             </div>
-            <div class="shop-address"><van-icon name="location-o" /> {{ item.address }}</div>
-            <div class="shop-tags">
-              <span class="tag">到店兑换</span>
-            </div>
-            <div style="text-align: right;" @click="goExchange(item)"><span class="shop-btn">去兑换</span></div>
           </div>
-
-        </div>
-
+        </template>
         <!-- 状态 4：底部上拉加载更多的提示 -->
         <div v-if="isLoadMore" style="text-align: center; color: #999; padding: 10px 0; font-size: 12px;">
           <van-loading size="16"
@@ -153,6 +181,7 @@
 </template>
 
 <script>
+import wx from "weixin-js-sdk";
 import { getWxLocation } from '@/utils/wxLocation'
 import { getBannerList, getBannerLists, getIsShowOder, sxfcard, brandnew, DangaoStore } from '@/api/service'
 import ElectronicCoupon from "@/components/select/ElectronicCoupon.vue";
@@ -161,6 +190,8 @@ export default {
   components: { ElectronicCoupon },
   data() {
     return {
+      lastLoadTime: 0,
+      searchCity: sessionStorage.getItem('cityName') || '',
       logoImg: '',
       sxfcardfag: '',
       shopPageNo: 1,
@@ -179,7 +210,7 @@ export default {
           back: require("../../assets/zhichong/yb.png")
         },
         {
-          title: "随心兑", isShow: false,
+          title: "随心付", isShow: false,
           active: 4,
           back: require("../../assets/zhichong/yb.png")
         },
@@ -214,6 +245,66 @@ export default {
     };
   },
   methods: {
+    openMap(item) {
+      // 点击后拉起高德地图 App 导航
+      const url = `https://uri.amap.com/marker?position=${item.lng},${item.lat}&name=${item.name}`;
+      window.location.href = url;
+    },
+    // 🚨 新增：WGS84 (微信原生) 转 GCJ02 (高德/腾讯火星坐标)
+    transformToGCJ02(lng, lat) {
+      const PI = 3.1415926535897932384626;
+      const a = 6378245.0;
+      const ee = 0.00669342162296594323;
+
+      const outOfChina = (lng, lat) => (lng < 72.004 || lng > 137.8347) || (lat < 0.8293 || lat > 55.8271);
+      const transformLat = (x, y) => {
+        let ret = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * Math.sqrt(Math.abs(x));
+        ret += (20.0 * Math.sin(6.0 * x * PI) + 20.0 * Math.sin(2.0 * x * PI)) * 2.0 / 3.0;
+        ret += (20.0 * Math.sin(y * PI) + 40.0 * Math.sin(y / 3.0 * PI)) * 2.0 / 3.0;
+        ret += (160.0 * Math.sin(y / 12.0 * PI) + 320 * Math.sin(y * PI / 30.0)) * 2.0 / 3.0;
+        return ret;
+      };
+      const transformLng = (x, y) => {
+        let ret = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x * y + 0.1 * Math.sqrt(Math.abs(x));
+        ret += (20.0 * Math.sin(6.0 * x * PI) + 20.0 * Math.sin(2.0 * x * PI)) * 2.0 / 3.0;
+        ret += (20.0 * Math.sin(x * PI) + 40.0 * Math.sin(x / 3.0 * PI)) * 2.0 / 3.0;
+        ret += (150.0 * Math.sin(x / 12.0 * PI) + 300.0 * Math.sin(x / 30.0 * PI)) * 2.0 / 3.0;
+        return ret;
+      };
+
+      if (outOfChina(lng, lat)) return [lng, lat];
+
+      let dLat = transformLat(lng - 105.0, lat - 35.0);
+      let dLng = transformLng(lng - 105.0, lat - 35.0);
+      const radLat = lat / 180.0 * PI;
+      let magic = Math.sin(radLat);
+      magic = 1 - ee * magic * magic;
+      const sqrtMagic = Math.sqrt(magic);
+      dLat = (dLat * 180.0) / ((a * (1 - ee)) / (magic * sqrtMagic) * PI);
+      dLng = (dLng * 180.0) / (a / sqrtMagic * Math.cos(radLat) * PI);
+      return [lng + dLng, lat + dLat]; // 返回 [经度, 纬度]
+    },
+    clearBrandAndLoadAll() {
+      this.showAllBrands = false; // 收起面板
+      this.currentBrandId = '';   // 清空当前品牌
+      this.logoImg = '';          // 清空品牌图
+      this.searchKeyword = "";    // 清空搜索关键词
+
+      window.scrollTo(0, 0);
+      this.isScroll = false;
+
+      const lat = sessionStorage.getItem('latitude') || '';
+      const lng = sessionStorage.getItem('longitude') || '';
+
+      // 传空字符串，查全部品牌
+      this.fetchExchangeShopList('', this.searchKeyword, false, lat, lng);
+    },
+    goToCityList() {
+      this.$router.push({
+        path: '/cakeCityList',
+        query: { from: 'orderfood' }
+      });
+    },
     getCleanActive() {
       let active = this.$route.query.active || '1';
       if (typeof active === 'string') {
@@ -253,13 +344,15 @@ export default {
     // 计算两点距离（单位：米）
     getDistance(lat1, lng1, lat2, lng2) {
       if (!lat1 || !lng1 || !lat2 || !lng2) return null;
-      const rad = Math.PI / 180;
-      const R = 6371000; // 地球半径
-      const dLat = (lat2 - lat1) * rad;
-      const dLng = (lng2 - lng1) * rad;
-      const a = Math.sin(dLat / 2) ** 2 +
-        Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLng / 2) ** 2;
-      return Math.round(2 * R * Math.asin(Math.sqrt(a))); // 返回整数米
+      const radLat1 = lat1 * Math.PI / 180.0;
+      const radLat2 = lat2 * Math.PI / 180.0;
+      const a = radLat1 - radLat2;
+      const b = lng1 * Math.PI / 180.0 - lng2 * Math.PI / 180.0;
+      let s = 2 * Math.asin(Math.sqrt(Math.pow(Math.sin(a / 2), 2) +
+        Math.cos(radLat1) * Math.cos(radLat2) * Math.pow(Math.sin(b / 2), 2)));
+      s = s * 6378137.0; // 地球赤道半径
+      s = Math.round(s * 10000) / 10000;
+      return Math.round(s); // 返回整数米
     },
     scrollToActiveBrand(brandId) {
       if (!brandId) return;
@@ -282,42 +375,111 @@ export default {
     initExchangeData() {
       if (!this.exchangeBrands || this.exchangeBrands.length === 0) return;
 
-      // 🚨 核心拦截：如果正在定位中，直接 return
-      if (this.isInitExchangeRunning) return;
+      this.isInitExchangeRunning = false;
       this.isInitExchangeRunning = true;
 
+      // 处理品牌
       const urlBrandId = this.$route.query.brandId;
-      const targetBrandId = urlBrandId || this.exchangeBrands[0].id;
+      let cleanBrandId = '';
+      if (urlBrandId) {
+        if (typeof urlBrandId === 'string') {
+          cleanBrandId = urlBrandId.split('brandId=')[0];
+        } else if (typeof urlBrandId === 'object' && urlBrandId[0]) {
+          cleanBrandId = urlBrandId[0].split('brandId=')[0];
+        }
+      }
 
-      this.currentBrandId = targetBrandId;
-      const currentBrandObj = this.exchangeBrands.find(b => b.id == targetBrandId);
-      if (currentBrandObj) this.logoImg = currentBrandObj.logo;
+      if (cleanBrandId) {
+        this.currentBrandId = cleanBrandId;
+        const currentBrandObj = this.exchangeBrands.find(b => b.id == this.currentBrandId || b.brand_id == this.currentBrandId);
+        if (currentBrandObj) this.logoImg = currentBrandObj.logo;
+        this.scrollToActiveBrand(this.currentBrandId);
+      } else {
+        this.currentBrandId = '';
+        this.logoImg = '';
+      }
 
-      this.scrollToActiveBrand(targetBrandId);
+      // 清洗城市
+      let rawCity = sessionStorage.getItem('cityName') || '';
+      let cleanCity = rawCity.replace(/\d+/g, '');
+      if (cleanCity) sessionStorage.setItem('cityName', cleanCity);
+      this.searchCity = cleanCity || '北京市';
 
-      // 先把列表清空，防止用户看到旧数据
+      // 重置列表状态
       this.exchangeShopList = [];
+      this.shopPageNo = 1;
+      this.isFetching = false;
+      this.isScroll = false;
       this.isShopLoading = true;
 
+      const userLat = sessionStorage.getItem('latitude');
+      const userLng = sessionStorage.getItem('longitude');
+
+      // 🚨 核心判断：如果有缓存，直接查（说明定位已经成功过了）
+      if (userLat && userLng) {
+        this.fetchExchangeShopList(this.currentBrandId, this.searchKeyword, false, userLat, userLng);
+        this.isInitExchangeRunning = false;
+        return;
+      }
+
+      // 🚨 如果没有缓存，说明是首次进入，去获取定位
       getWxLocation()
         .then(loc => {
-          if (loc.city) sessionStorage.setItem('cityName', loc.city);
-          sessionStorage.setItem('longitude', loc.longitude);
-          sessionStorage.setItem('latitude', loc.latitude);
-          this.fetchExchangeShopList(targetBrandId, this.searchKeyword, false, loc.latitude, loc.longitude);
+          // 转换并保存
+          const [gcjLng, gcjLat] = this.transformToGCJ02(Number(loc.longitude), Number(loc.latitude));
+          sessionStorage.setItem('latitude', gcjLat);
+          sessionStorage.setItem('longitude', gcjLng);
+
+          if (loc.city) {
+            let locCityClean = loc.city.replace(/\d+/g, '');
+            // 如果当前显示的城市跟定位城市一致，或者没选过城市，就更新城市显示
+            if (!this.$route.query.from) {
+              sessionStorage.setItem('cityName', locCityClean);
+              this.searchCity = locCityClean;
+            }
+          }
+          this.fetchExchangeShopList(this.currentBrandId, this.searchKeyword, false, gcjLat, gcjLng);
         })
         .catch(() => {
-          this.fetchExchangeShopList(targetBrandId, this.searchKeyword);
+          // 兜底
+          const defaultLat = 39.908;
+          const defaultLng = 116.397;
+          sessionStorage.setItem('latitude', defaultLat);
+          sessionStorage.setItem('longitude', defaultLng);
+          this.fetchExchangeShopList(this.currentBrandId, this.searchKeyword, false, defaultLat, defaultLng);
         })
         .finally(() => {
-          // 🚨 无论成功失败，都要释放锁
           this.isInitExchangeRunning = false;
         });
     },
     brandnews() {
       return brandnew().then(res => {
         if (res.code == 200 && res.data) {
-          this.exchangeBrands = res.data.map(item => ({
+          // 1. 拿到当前城市
+          const rawCity = sessionStorage.getItem('cityName') || '';
+          const city = rawCity.replace(/\d+/g, ''); // 清洗掉数字
+          const isBeijing = ['北京', '北京市'].includes(city);
+
+          // 2. 北京允许展示的 30 个品牌名单（完全对应你截图里的名字）
+          const beijingAllowList = [
+            '味多美', '元祖食品', '金凤成祥', '小丽都', '巴黎贝甜',
+            '龙山村', '姆们', '泸溪河', '北京池田', 'DQ',
+            '老莫西饼', '西村叔叔的店', '三宝乐', '𫖰客烘焙', 'FALANC CAKE',
+            '爸爸糖', '小咖咖啡','㞭客烘焙', 'cococean', '百果园', '茉莉奶白',
+            '爷爷不泡茶', '周黑鸭', '北京来伊份', '正本原', '喜士蛋糕',
+            '顶风针蛋糕', '明明烘焙', '夏埠村', '唐饼家', '五度蛋糕',
+            '牛仕西饼屋' // 你文字里补充的，如果图里没有可以删掉
+          ];
+
+          let list = res.data;
+
+          // 3. 核心逻辑：如果是北京，则过滤出名单里的
+          if (isBeijing) {
+            list = list.filter(item => beijingAllowList.includes(item.name));
+          }
+
+          // 4. 赋值给视图
+          this.exchangeBrands = list.map(item => ({
             id: item.brand_id,
             name: item.name,
             logo: item.logo
@@ -327,13 +489,33 @@ export default {
             this.logoImg = this.exchangeBrands[0].logo;
           }
 
-          // 🚨 只有条件满足时，才去拉取门店
+          // 5. 如果当前在随心兑 tab，去拉取门店
           if (this.active == 4) {
             this.initExchangeData();
           }
         }
       });
     },
+    // brandnews() {
+    //   return brandnew().then(res => {
+    //     if (res.code == 200 && res.data) {
+    //       this.exchangeBrands = res.data.map(item => ({
+    //         id: item.brand_id,
+    //         name: item.name,
+    //         logo: item.logo
+    //       }));
+
+    //       if (this.exchangeBrands.length > 0) {
+    //         this.logoImg = this.exchangeBrands[0].logo;
+    //       }
+
+    //       // 🚨 只有条件满足时，才去拉取门店
+    //       if (this.active == 4) {
+    //         this.initExchangeData();
+    //       }
+    //     }
+    //   });
+    // },
     updateTabShow() {
       this.tabList.forEach(item => {
         // 🚨 核心：随心兑 (active == 4) 独立判断，只要 sxf == 1 就显示
@@ -352,28 +534,7 @@ export default {
         }
       });
     },
-    // updateTabShow() {
-    //   // 🚨 核心：如果接口没权限或报错，所有 Tab 强制关闭，直接 return
-    //   if (this.sxfcardfag != 1) {
-    //     this.tabList.forEach(item => {
-    //       item.isShow = false;
-    //     });
-    //     return;
-    //   }
 
-    //   // 如果接口通过了（有权限），再执行你原本的显示逻辑
-    //   this.tabList.forEach(item => {
-    //     if (item.active == 4) {
-    //       item.isShow = true; // 随心兑
-    //     } else if (this.cake == 88) {
-    //       item.isShow = item.active == 2;
-    //     } else if (item.active == 1 || item.active == 2) {
-    //       item.isShow = this.cake != 2;
-    //     } else {
-    //       item.isShow = this.cake != 1 || this.types == 1;
-    //     }
-    //   })
-    // },
     sxfcards() {
       sxfcard()
         .then(res => {
@@ -399,36 +560,51 @@ export default {
       this.showAllBrands = !this.showAllBrands;
     },
     selectBrand(val, id) {
-      console.log(val)
-      this.logoImg = val.logo
-      this.currentBrandId = id;
-      this.showAllBrands = false; // 选完品牌后收起面板
+      let targetId = id;
+      if (val && val.id) {
+        targetId = val.id;
+      }
+
+      console.log("当前选中的品牌ID：", targetId);
+
+      this.logoImg = val.logo;
+      this.currentBrandId = targetId;
+      this.showAllBrands = false;
       this.searchKeyword = "";
+
+      // 🚨 核心修复：点击新品牌，强制停止滚动、重置锁、重置页码
       window.scrollTo(0, 0);
       this.isScroll = false;
+      this.isFetching = false; // 强制解锁
+      this.shopPageNo = 1;     // 重置页码
+
       const lat = sessionStorage.getItem('latitude') || '';
       const lng = sessionStorage.getItem('longitude') || '';
-      this.fetchExchangeShopList(id, this.searchKeyword, false, lat, lng);
-      // this.fetchExchangeShopList(id, this.searchKeyword);
+
+      this.fetchExchangeShopList(targetId, this.searchKeyword, false, lat, lng);
     },
 
 
     goExchange(item) {
+      // 🚨 提取出安全的品牌字段
+      const brandIds = item.brand && item.brand.brand_id ? item.brand.brand_id : '';
+      const brandLogo = item.brand && item.brand.logo ? item.brand.logo : '';
+      const brandName = item.brandName || (item.brand ? item.brand.name : '好利来');
+
       this.$router.push({
-        path: '/GetpayqrCode', // 你的付款码页面路由
+        path: '/GetpayqrCode',
         query: {
-          brandIds:this.currentBrandId,
-          brandId: item.id, // 如果有品牌ID就用，没有就用当前选中的
+          brandIds,
+          brandLogo,
+          brandId: item.id,
           shopId: item.shopId,
-          brandName: item.brandName || '好利来',        // 品牌名称
-          shopName: item.name,                         // 门店名称
-          address: item.address,                       // 门店地址
-          distance: item.distance,                     // 距离
-          logo: this.logoImg                           // 🚨 把当前选中的品牌 LOGO 传过去
+          brandName,
+          shopName: item.name,
+          address: item.address,
+          distance: item.distance
         }
       })
     },
-
 
     // 搜索逻辑
     onSearch() {
@@ -440,58 +616,70 @@ export default {
 
     },
 
-    // 获取下方门店列表
     fetchExchangeShopList(brandId = '', keyword = '', append = false, lat = '', lng = '') {
-      // 🚨 核心拦截：如果当前正在发请求，直接 return，不执行下面的逻辑
-      // if (this.isFetching) return;
-      if (this.isFetching && append) return;
-      // this.isFetching = true;
-
+      // 🚨 如果是切换品牌、搜索等操作，强制重置状态
       if (!append) {
-        this.isFetching = true;
-        this.exchangeShopList = [];
+        this.isFetching = false;
         this.shopPageNo = 1;
+        this.exchangeShopList = [];
         this.isScroll = false;
         this.isShopLoading = true;
-      } else {
-        this.isFetching = true;
+      }
+
+      // 🚨 核心：如果正在加载，直接拦截
+      if (this.isFetching) return;
+
+      // 上锁
+      this.isFetching = true;
+
+      if (append) {
         this.isLoadMore = true;
       }
+
+      // 🚨 核心兜底：传参数、读缓存、给北京默认坐标
+      const finalLat = lat || sessionStorage.getItem('latitude') || 39.908;
+      const finalLng = lng || sessionStorage.getItem('longitude') || 116.397;
+      const finalCity = (sessionStorage.getItem('cityName') || '').replace(/\d+/g, '') || '北京市';
 
       const params = {
         pageNo: this.shopPageNo,
         pageSize: 10,
         brandId: brandId || '',
         shopName: keyword || '',
-        latitude: lat || '',
-        longitude: lng || '',
-        city: sessionStorage.getItem('cityName') || '',
+        latitude: finalLat,
+        longitude: finalLng,
+        city: finalCity,
       };
 
       DangaoStore(params).then(res => {
         if (res.code == 200 && res.data) {
           let rows = res.data.rows || [];
+          const originalLength = rows.length;
 
-          // 🚨 核心修改：拿到当前缓存的用户经纬度，遍历计算距离
-          const userLat = sessionStorage.getItem('latitude');
-          const userLng = sessionStorage.getItem('longitude');
+          // 处理图片和距离...
+          rows = rows.filter(item => {
+            if (!item.brand || !item.brand.logo) return false;
+            if (!brandId) {
+              const isBrandValid = this.exchangeBrands.some(b => b.id == item.brand.brand_id);
+              if (!isBrandValid) return false;
+            }
+            return true;
+          }).map(item => {
+            item.logo = item.brand.logo;
+            return item;
+          });
 
-          if (userLat && userLng) {
-            rows.forEach(item => {
-              // 如果后端没给，并且门店有经纬度，前端自己算
-              if (item.distance === null || item.distance === undefined) {
-                if (item.lat && item.lng) {
-                  item.distance = this.getDistance(
-                    Number(userLat), Number(userLng),
-                    Number(item.lat), Number(item.lng)
-                  );
-                }
-              }
-            });
-          }
+          const userLat = Number(finalLat);
+          const userLng = Number(finalLng);
 
-          if (rows.length < 10) {
-            this.isScroll = true; // 无更多数据
+          rows.forEach(item => {
+            if (!item.distance && item.lat && item.lng) {
+              item.distance = this.getDistance(userLat, userLng, Number(item.lat), Number(item.lng));
+            }
+          });
+
+          if (originalLength < 10) {
+            this.isScroll = true;
           }
 
           if (append) {
@@ -507,12 +695,12 @@ export default {
         if (!append) this.exchangeShopList = [];
         this.$toast('获取门店列表失败');
       }).finally(() => {
+        // 🚨 最重要的绝杀：无论成功、失败、没数据，必须在最后把所有锁解开！
         this.isFetching = false;
         this.isShopLoading = false;
         this.isLoadMore = false;
       });
     },
-    // 关闭广告
     closeImg() { this.showAd = false; },
     closeAd() {
       this.showAd = false;
@@ -612,35 +800,38 @@ export default {
         }
       })
     },
-    //滚动条事件
     handleScroll(e) {
-      let scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
-      let scrollHeight = document.documentElement.scrollHeight || document.body.scrollHeight;
-      let clientHeight = document.documentElement.clientHeight || document.body.clientHeight;
-      // if (Math.ceil(scrollTop + clientHeight) >= scrollHeight) {
-      //   this.onMost()
-      // }
+      // 🚨 如果上一次滑动判断还没执行完，直接拦截，防止手机端触发频率过高
+      if (this.scrollTimer) return;
 
-      if (Math.ceil(scrollTop + clientHeight) >= scrollHeight - 100) {
-        this.onMost()
-      }
+      this.scrollTimer = setTimeout(() => {
+        this.scrollTimer = null; // 清空，为下一次做准备
 
+        let scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+        let scrollHeight = document.documentElement.scrollHeight || document.body.scrollHeight;
+        let clientHeight = document.documentElement.clientHeight || document.body.clientHeight;
 
-
+        if (scrollTop + clientHeight >= scrollHeight - 150) {
+          this.onMost();
+        }
+      }, 200); // 200ms 内只执行一次
     },
+
     onMost() {
-      // 🚨 修复核心：只要正在发请求，或者已经到底了，直接 return 阻断，什么都不做！
+      // 🚨 如果正在发请求，或者已经到底了，直接退出
       if (this.isFetching || this.isScroll) return;
 
       if (this.active == 2) {
-        this.pageno++
-        this.getBrandDirect(this.pageno)
+        this.pageno++;
+        this.getBrandDirect(this.pageno);
       } else if (this.active == 4) {
-        // 列表为空时也不允许加载下一页
-        if (this.exchangeShopList.length === 0) return;
+        if (this.exchangeShopList.length === 0 && this.shopPageNo > 1) return;
 
-        this.shopPageNo++
-        this.fetchExchangeShopList(this.currentBrandId, this.searchKeyword, true);
+        this.shopPageNo++; // 只有通过了拦截，页码才 +1
+        const lat = sessionStorage.getItem('latitude') || '';
+        const lng = sessionStorage.getItem('longitude') || '';
+
+        this.fetchExchangeShopList(this.currentBrandId, this.searchKeyword, true, lat, lng);
       }
     },
 
@@ -667,16 +858,16 @@ export default {
   watch: {
     '$route'(to, from) {
       if (to.path === '/orderfood') {
-        // 🚨 使用工具方法获取干净的 active
         const newActive = this.getCleanActive();
 
-        // 1. 如果 active 变了
         if (this.active !== newActive) {
           this.active = newActive;
-          this.initTabData(); // 只要一变，统一交给 initTabData 去分发请求
+          this.initTabData();
         }
-        // 2. 如果还在当前 Tab 4，但是 brandId 变了
-        else if (this.active === 4 && to.query.brandId !== from.query.brandId) {
+        // 🚨 注意这里：直接把 removeItem 删掉，千万别清空经纬度！
+        else if (to.query.from === 'orderfood' || (this.active === 4 && to.query.brandId !== from.query.brandId)) {
+          this.exchangeShopList = [];
+          this.isFetching = false;
           this.initExchangeData();
         }
       }
@@ -1090,10 +1281,21 @@ export default {
     }
 
     .shop-btn {
+      margin-left: 10px;
+      display: inline-block;
       background: #3FA6FF;
       color: #fff;
       font-size: 12px;
       padding: 4px 16px;
+      border-radius: 15px;
+
+    }
+
+    .shop-btn1 {
+      background: #e6e6e6;
+      color: #4b4b4b;
+      font-size: 12px;
+      padding: 4px 10px;
       border-radius: 15px;
 
     }
