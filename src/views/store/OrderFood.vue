@@ -1166,8 +1166,8 @@ export default {
       align-items: center;
 
       img {
-        width: 45px;
-        height: 45px;
+        width:50px;
+        height: 50px;
         border-radius: 8px;
         border: 1px solid #eee;
         object-fit: contain;
@@ -1175,8 +1175,8 @@ export default {
       }
 
       .grid-brand-name {
-        font-size: 12px;
-        color: #333;
+        font-size: 13px;
+        color: #333; 
         text-align: center;
 
 

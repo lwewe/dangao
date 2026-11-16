@@ -186,7 +186,7 @@
     </div>
     <!-- add 随心兑 -->
     <!--分类-->
-    <div class="tabbar" :class="{ tabbar2: show }" ref="topScroll" v-if="tabList.length > 0">
+    <!-- <div class="tabbar" :class="{ tabbar2: show }" ref="topScroll" v-if="tabList.length > 0">
       <div v-if="isLoading" class="isTab" :style="'width:' + tabList.length * 90 + 'px;'"></div>
       <div class="tabbarBox" :style="'width:' + tabList.length * 90 + 'px;'">
         <div class="tabItem" v-for="(item, index) in tabList" :key="item.id" @click="changeTab(item.id, index)">
@@ -194,7 +194,21 @@
           <div class="tabBottom" :class="{ tabBottom2: active == item.id }">{{ item.xtitle }}</div>
         </div>
       </div>
+    </div> -->
+    <div class="tabbar" :class="{ tabbar2: show }" ref="topScroll" v-if="tabList.length > 0">
+  <div v-if="isLoading" class="isTab"></div>
+  <div class="tabbarBox" :style="{ minWidth: tabList.length * 90 + 'px' }">
+    <div
+      class="tabItem"
+      v-for="(item, index) in tabList"
+      :key="item.id"
+      @click="changeTab(item.id, index)"
+    >
+      <div class="tabTop" :class="{ tabTop2: active == item.id }">{{ item.title }}</div>
+      <div class="tabBottom" :class="{ tabBottom2: active == item.id }">{{ item.xtitle }}</div>
     </div>
+  </div>
+</div>
     <!--    "cpbs": "2", //1-商城产品 2-蛋糕-->
     <div class="listBox" :style="{ minHeight: isHeight ? 'calc(100vh - 110px)' : '' }" :class="{ fixedHeight: show }">
 
@@ -902,21 +916,26 @@ export default {
   padding: 7px 15px;
   margin-top: 5px;
   position: relative;
-
+ -webkit-overflow-scrolling: touch;
   .tabbarBox {
     display: flex;
     align-items: center;
-    gap: 20px;
+    // gap: 20px;
+    width: 100%; 
   }
 
   .tabItem {
-    width: 100%;
+    // width: 100%;
+      flex: 1 1 0;          // 关键2：允许伸缩，基准 0
+    min-width: 90px;      // 关键3：最小宽度，防止太窄
+    box-sizing: border-box;
   }
 
   .tabTop {
     //font-weight: bold;
     text-align: center;
     font-size: 15px;
+    white-space: nowrap; 
   }
 
   .tabBottom {
