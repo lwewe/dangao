@@ -160,7 +160,7 @@
 
           <div class="exchange-header">
             <div class="header-left">
-              <span class="main-title">随心兑</span>
+              <span class="main-title">随心付</span>
               <span class="sub-title">| 蛋糕、饮品、甜品</span>
             </div>
             <div class="seeAll" style="padding-right: 4px;" @click="toOtherNext('/orderfood?active=4')">
