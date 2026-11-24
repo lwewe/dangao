@@ -1186,7 +1186,7 @@ addshopcar() {
   });
   
   console.log('构建的规格选项:', specOptions);
-  
+  this.lastSpecOptions = specOptions;
   const checkData = {
     categoryCode: this.categoryCodes,
     storeCode: this.storeid,
@@ -1260,7 +1260,7 @@ addshopcar() {
         count: this.count,
         
         menuFlag: 'C',
-        
+         specOptions: this.lastSpecOptions || [],
         selectedData: {
           specs: this.selectedSpecs,
           multiOptions: this.selectedMultiOptions,

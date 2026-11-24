@@ -538,7 +538,8 @@ export default {
     sxfcards() {
       sxfcard()
         .then(res => {
-          this.sxfcardfag = (res.code == 200 && res.data) ? res.data.sxf : '';
+          // this.sxfcardfag = (res.code == 200 && res.data) ? res.data.sxf : '';随行付上线再放开ff11-24
+          this.sxfcardfag = 0
           this.updateTabShow();
 
           // 🚨 修复：去掉路由跳转，直接改状态和地址栏

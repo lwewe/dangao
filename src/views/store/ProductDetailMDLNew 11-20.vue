@@ -26,7 +26,6 @@
             <div v-for="(item2, index2) in item.extra_list" class="product"
               :class="{ product2: item2.is_default == 1 && item.display_type != 'bar', product3: num1 == 4 }"
               :key="index2" @click="changeSelect(item, index, item2, index2)">
-              <!--              及数量-->
               <div class="stepperBar">
                 <div> {{ item2.name }}{{ item.code }}</div>
                 <div class="stepper">
@@ -37,25 +36,16 @@
           </div>
         </div>
       </div>
-      <!--      <div class="listBox" v-if="accessoriesList.length>0">-->
-      <!--        <div class="listItem">-->
-      <!--          <div class="listName">配料</div>-->
-      <!--          <div class="comboProducts">-->
-      <!--            <div v-for="(item,index) in accessoriesList" :key="index" class="product"-->
-      <!--                 :class="{product2:item.checked}"-->
-      <!--                 @click="changeAccessories(item,index)">-->
-      <!--              <div>-->
-      <!--                <div>-->
-      <!--                  <div class="flexBox">-->
-      <!--                    <div class="innerName">{{ item.name }}</div>-->
-      <!--                  </div>-->
-      <!--                </div>-->
-      <!--              </div>-->
-      <!--            </div>-->
-      <!--          </div>-->
-      <!--        </div>-->
-      <!--      </div>-->
+
       <div class="listBox" v-if="list.length > 0">
+        <!-- 四宫格自提：已选提示 -->
+        <div v-if="num1 == 4 && !flag" class="selectTip">
+          已选 {{ selectedCount }}/{{ maxCount }}
+          <span v-if="selectedCount < minCount" class="tipWarn">
+            （还差 {{ minCount - selectedCount }} 件）
+          </span>
+        </div>
+
         <div v-for="(item, index) in list" :key="index" class="listItem">
           <div class="listName">{{ item.name || item.roundNameCn || item.attrName || item.product_name
             || item.specItemName }}</div>
@@ -65,7 +55,6 @@
               class="product"
               :class="{ product2: (item2.isDefault == 1 || item2.defaultSelected == 1 || item2.is_default == 1 || item2.checked == 1 || item2.recommendFlag == 1 || item.product_name) && item.display_type != 'bar', product3: num1 == 4 && item.display_type == 'bar', product4: !item2.disabled && num1 == 7 }"
               :key="index2" @click="changeSelect(item, index, item2, index2)">
-              <!--              及数量-->
               <div v-if="num1 == 4 && item.display_type == 'bar'" class="stepperBar">
                 <div> {{ item2.name || item2.menuCn || item2.showNameCn }}</div>
                 <div class="stepper">
@@ -81,9 +70,10 @@
                 <div class="innerName">
                   {{ item2.name || item2.nameCn || item2.menuCn || item2.showNameCn || item2.value || item.product_name
                   }}
-                  <!--                  <span v-if="item2.quantity>0" class="quantity">×{{ item2.quantity }}</span>-->
+                  <span v-if="num1 == 4 && !flag && item2.price" class="diffPrice" style="display: none;">
+                    {{ item2.price > 0 ? '+' : '' }}{{ item2.price }}元
+                  </span>
                 </div>
-                <!--                <div style="word-break: break-all">{{ item2.code }}</div>-->
               </div>
             </div>
           </div>
@@ -104,7 +94,8 @@
             ￥<span class="priceText">{{ Number(count * fullPrice).toFixed(2) || 0 }}</span>
           </div>
         </div>
-        <div class="order order2" @click="addshopcar">
+        <div class="order order2" :class="{ orderDisabled: num1 == 4 && !flag && selectedCount < minCount }"
+          @click="addshopcar">
           <div>加入购物车</div>
           <div class="orderText">Add to Cart</div>
         </div>
@@ -132,12 +123,13 @@ export default {
       storeid: "",
       detalilist: [],
       list: [],
-      shopcar: [],   //购物车
-      goods: [],    //需要存储的商品
+      shopcar: [],
+      goods: [],
       count: 1,
       costprice: 0,
       loadingflag: true,
       fullPrice: 0,
+      channelFullPrice: 0,   // ★ 新增：实际结算价（成本）
       productmapping: {},
       rules: [],
       concentration: [],
@@ -149,6 +141,27 @@ export default {
       flag: false,
       shopName: ""
     };
+  },
+  computed: {
+    selectedCount() {
+      if (this.num1 != 4 || this.flag) return 0
+      let n = 0
+      this.list.forEach(item => {
+        const arr = item.sku_infos || item.comboProducts || []
+        arr.forEach(s => {
+          if (s.checked === true || s.checked === 1) n++
+        })
+      })
+      return n
+    },
+    minCount() {
+      if (this.num1 != 4 || this.flag) return 0
+      return this.list[0]?.selectMinCount || 4
+    },
+    maxCount() {
+      if (this.num1 != 4 || this.flag) return 0
+      return this.list[0]?.selectMaxCount || 4
+    }
   },
   watch: {
     shopcar() {
@@ -163,9 +176,23 @@ export default {
     }
   },
   methods: {
+    // ★ 重算 channelFullPrice（麦当劳自提/四宫格自提都可用）
+    calcChannelFullPrice() {
+      let base = this.detalilist.salePrice
+        || this.detalilist.product_price
+        || this.detalilist.price
+        || 0
+      this.list.forEach(item => {
+        const arr = item.sku_infos || item.comboProducts || []
+        arr.forEach(s => {
+          if (s.checked === true || s.checked === 1) {
+            base += Number(s.channelPrice || 0)
+          }
+        })
+      })
+      this.channelFullPrice = Math.round(base * 100) / 100
+    },
     changValue(item2, item) {
-      // console.log(this.fullPrice)
-      // console.log(item2)
       this.list.forEach(item3 => {
         item3.extra_list.forEach(item4 => {
           if (item3.code == "Cupsize") {
@@ -179,12 +206,9 @@ export default {
           if (item4.code == item2.code) {
             item4.number = item2.number
             if (item2.must != 1) {
-              // console.log("走了" +
-              //     "")
               this.fullPrice += Number(Number(item4.price).toFixed(0)) * item4.number
             }
           }
-
         })
       })
     },
@@ -208,38 +232,22 @@ export default {
           }
         }
         if (item2.checked) {
-          // this.fullPrice+=item2.discountPrice
           this.accessories.push(item2.skuCode)
           this.accessoriesText.push(item2.name)
         }
       })
     },
-    // 选择规格
     changeSelect(item, index, item2, index2) {
-      // if (this.num1 == 1) {
-      //
-      // }else
       if (this.num1 == 2) {
         if (this.detalilist.menuFlag == 2) {
-          // if (item2.selectable == 1) {
-          //   if (item2.defaultSelected == null) {
-          //     item2.defaultSelected = 1
-          //   } else {
-          //     item2.defaultSelected = null
-          //   }
-          // }
           this.list.forEach((item3, index3) => {
             item3.condimentItemList.forEach((item4, index4) => {
               if (index == index3) {
-                //   if (item2.selectable != 1) {
                 item4.defaultSelected = 0
-                // }
               }
             })
           })
-          // if (item2.selectable != 1) {
           item2.defaultSelected = 1
-          // }
         } else
           if (this.detalilist.menuFlag == 3) {
             this.list.forEach(item3 => {
@@ -264,24 +272,14 @@ export default {
               })
             })
 
-            console.log('选中的规格:', JSON.stringify(selected))
-            console.log('goodsSkuList 第一个:', JSON.stringify(this.detalilist.goodsSkuList[0].skuItemList.map(i => i.specValue)))
-            console.log('goodsSkuList 最后一个:', JSON.stringify(this.detalilist.goodsSkuList[this.detalilist.goodsSkuList.length - 1].skuItemList.map(i => i.specValue)))
-
             const matched = this.detalilist.goodsSkuList.find(sku => {
               const values = sku.skuItemList.map(i => i.specValue)
-              const isMatch = selected.length === values.length && selected.every(s => values.includes(s))
-              if (isMatch) console.log('匹配到了:', sku.skuId, values, sku.salePrice)
-              return isMatch
+              return selected.length === values.length && selected.every(s => values.includes(s))
             })
-
-            console.log('matched:', matched)
 
             if (matched) {
               this.fullPrice = matched.salePrice || matched.channelPrice
             }
-
-            console.log('设置 fullPrice 后:', this.fullPrice)
           }
       }
       else if (this.num1 == 3) {
@@ -294,17 +292,13 @@ export default {
         })
         item2.defaultSelected = 1
       }
-      else if (this.num1 == 1 || this.num1 == 4) {
-        if (this.num1 == 1 && this.flag) {
-
+      else if (this.num1 == 1) {
+        if (this.flag) {
           this.list.forEach(item3 => {
             item3.comboProducts.forEach(item4 => {
-              if (item.choicesCode == item3.choicesCode) {
-                item4.isDefault = 0
-              }
+              if (item.choicesCode == item3.choicesCode) item4.isDefault = 0
             })
           })
-          //ffgai item.comboProducts.forEach(p => p.isDefault = 0);
           item2.isDefault = 1
         } else {
           this.fullPrice = this.detalilist.salePrice
@@ -312,24 +306,84 @@ export default {
             if (item3.sku_infos) {
               item3.sku_infos.forEach(item4 => {
                 if (item.id == item3.id && item.name == item3.name && item4.name) {
-                  item4.checked = false
+                  this.$set(item4, 'checked', false)
                 }
               })
             }
           })
-          if (item2.name) {
-            item2.checked = true
-          }
+          if (item2.name) this.$set(item2, 'checked', true)
           this.list.forEach(item3 => {
             if (item3.sku_infos) {
               item3.sku_infos.forEach(item4 => {
                 if (item4.checked && item4.name) {
-                  this.fullPrice += item4.price
+                  this.fullPrice += Number(item4.price || 0)
                 }
               })
             }
           })
+          this.calcChannelFullPrice()
         }
+      }
+      // ===== 四宫格：只对自提生效 =====
+      else if (this.num1 == 4 && !this.flag) {
+        const isChecked = item2.checked === true || item2.checked === 1
+
+        if (isChecked) {
+          this.$set(item2, 'checked', false)
+        } else {
+          let count = 0
+          this.list.forEach(item3 => {
+            const arr = item3.sku_infos || item3.comboProducts || []
+            arr.forEach(s => {
+              if (s.checked === true || s.checked === 1) count++
+            })
+          })
+          if (count >= this.maxCount) {
+            this.$toast(`最多选 ${this.maxCount} 件`)
+            return
+          }
+          this.$set(item2, 'checked', true)
+        }
+
+        this.fullPrice = this.detalilist.salePrice
+          || this.detalilist.product_price
+          || this.detalilist.price
+          || 0
+
+        this.list.forEach(item3 => {
+          const arr = item3.sku_infos || item3.comboProducts || []
+          arr.forEach(s => {
+            if ((s.checked === true || s.checked === 1) && s.price) {
+              this.fullPrice += Number(s.price)
+            }
+          })
+        })
+        this.fullPrice = Math.round(this.fullPrice * 100) / 100
+
+        // ★ 同步算 channelFullPrice
+        this.calcChannelFullPrice()
+      }
+      // ===== 四宫格外卖：保持原逻辑 =====
+      else if (this.num1 == 4 && this.flag) {
+        this.fullPrice = this.detalilist.salePrice
+        this.list.forEach(item3 => {
+          if (item3.sku_infos) {
+            item3.sku_infos.forEach(item4 => {
+              if (item.id == item3.id && item.name == item3.name && item4.name) {
+                this.$set(item4, 'checked', false)
+              }
+            })
+          }
+        })
+        if (item2.name) this.$set(item2, 'checked', true)
+        this.list.forEach(item3 => {
+          if (item3.sku_infos) {
+            item3.sku_infos.forEach(item4 => {
+              if (item4.checked && item4.name) this.fullPrice += item4.price
+            })
+          }
+        })
+        this.calcChannelFullPrice()   // ★ 新增
       }
       else if (this.num1 == 5) {
         this.fullPrice = this.detalilist.salePrice
@@ -386,28 +440,47 @@ export default {
         item2.recommendFlag = 1
       }
     },
-    // 加入购物车
     addshopcar() {
+      // 四宫格自提校验
+      if (this.num1 == 4 && !this.flag) {
+        let count = 0
+        this.list.forEach(item => {
+          const arr = item.sku_infos || item.comboProducts || []
+          arr.forEach(s => {
+            if (s.checked === true || s.checked === 1) count++
+          })
+        })
+        if (count < this.minCount) {
+          this.$toast(`请选满 ${this.minCount} 件`)
+          return
+        }
+        if (count > this.maxCount) {
+          this.$toast(`最多选 ${this.maxCount} 件`)
+          return
+        }
+      }
 
-       let matchedSkuCode = ''
-  if (this.num1 == 6 && this.detalilist.details && this.detalilist.details.sku_infos) {
-    const configArr = []
-    this.list.forEach(item => {
-      item.ingredients.forEach(item2 => {
-        if (item2.checked == 1) configArr.push(item2.name)
-      })
-    })
-    const matched = this.detalilist.details.sku_infos.find(sku => {
-      const values = sku.values.map(v => v.spec_name)
-      return values.length === configArr.length &&
-             values.every((v, i) => v === configArr[i])
-    })
-    if (matched) matchedSkuCode = matched.code
-  }
-  // ===== 新增结束 =====
-
+      let matchedSkuCode = ''
+      if (this.num1 == 6 && this.detalilist.details && this.detalilist.details.sku_infos) {
+        const configArr = []
+        this.list.forEach(item => {
+          item.ingredients.forEach(item2 => {
+            if (item2.checked == 1) configArr.push(item2.name)
+          })
+        })
+        const matched = this.detalilist.details.sku_infos.find(sku => {
+          const values = sku.values.map(v => v.spec_name)
+          return values.length === configArr.length &&
+            values.every((v, i) => v === configArr[i])
+        })
+        if (matched) matchedSkuCode = matched.code
+      }
 
       var all = ""
+      // ★ 新增：麦当劳自取 selected 组装
+      var selected = []
+      var allProducts = []
+
       if (this.num1 == 1 || this.num1 == 4) {
         if (this.num1 == 1 && this.flag) {
           this.list.forEach(item => {
@@ -418,58 +491,49 @@ export default {
             })
           })
         } else {
+          // ★ 自提：跳过 required，组装 selected（num1==1 和 num1==4 都组装）
           this.list.forEach(item => {
-            if (item.sku_infos) {
-              item.sku_infos.forEach(item2 => {
-                if (item2.checked) {
-                  all += item2.name + "/"
-                }
-              })
-            } else {
-              all += item.product_name + "/"
-            }
+            if (!item.sku_infos || !item.id) return
+            item.sku_infos.forEach(item2 => {
+              const isChecked = item2.checked === true || item2.checked === 1
+              if (isChecked) {
+                all += (item2.name || item2.product_name) + "/"
+                allProducts.push({
+                  linkId: item.id,
+                  productId: String(item2.id),
+                  quantity: item2.amount || item2.number || 1
+                })
+              }
+            })
           })
         }
       }
       else if (this.num1 == 2) {
-        var selected = []  // ← 补上声明
+        var selected2 = []
         this.list.forEach(item => {
-
-
           if (this.detalilist.menuFlag == 2) {
-
             item.condimentItemList.forEach(item2 => {
               if (item2.defaultSelected == 1) {
                 all += item2.showNameCn + "/"
               }
             })
           } else if (this.detalilist.menuFlag == 3) {
-
-
             item.groupItemList.forEach(item2 => {
               if (item2.defaultSelected == 1) {
                 all += item2.showNameCn + "/"
               }
             })
           }
-
-
-
         })
 
-
-
-
-        // 套餐：遍历 list 收集选中规格
         if (this.detalilist.isMultiSpec == 1) {
-          // 收集用户选中的规格值
           const selectedSpecs = []
           this.list.forEach(round => {
             round.itemList.forEach(spec => {
               if (spec.defaultSelected == 1) {
                 all += spec.showNameCn + "/"
                 selectedSpecs.push(spec.showNameCn)
-                selected.push({
+                selected2.push({
                   roundId: round.roundId,
                   linkId: round.roundId,
                   productId: spec.showNameCn,
@@ -479,20 +543,17 @@ export default {
             })
           })
 
-          // 根据选中的规格值匹配 SKU
           let matchedSku = this.detalilist.goodsSkuList.find(sku => {
             const values = sku.skuItemList.map(item => item.specValue)
             return selectedSpecs.every(spec => values.includes(spec))
           })
 
-          // ✅ 加上这两行
           if (matchedSku) {
             this.fullPrice = matchedSku.salePrice || matchedSku.channelPrice
           }
-          this.detalilist.selected = selected
+          this.detalilist.selected = selected2
           this.detalilist.linkId = matchedSku?.skuId || this.detalilist.goodsSkuList?.[0]?.skuId || this.productid
         }
-
       }
       else if (this.num1 == 3) {
         if (this.list[0].itemList.filter(item8 => item8.defaultSelected == 1).length == 0) {
@@ -513,21 +574,14 @@ export default {
             if (item4.checked == 1) {
               this.detalilist.details.sku_infos.forEach(item => {
                 item.specs.forEach(item2 => {
-                  // item2.checked = 0
                   if (item4.code == item2.spec_code) {
                     item2.checked = 1
                   }
                 })
-                // console.log(item.specs.filter(item7=>item7.checked==1).length)
-                // if( item.specs.filter(item7=>item7.checked==1).length== item.specs.length){
-                //   console.log(item.specs)
-                //   console.log(55)
-                // }
               })
             } else {
               this.detalilist.details.sku_infos.forEach(item => {
                 item.specs.forEach(item2 => {
-                  // item2.checked = 0
                   if (item4.code == item2.spec_code) {
                     item2.checked = 0
                   }
@@ -549,23 +603,18 @@ export default {
           this.$toast((this.shopName ? this.shopName : "") + "规格选择有误，请重新选择")
           return;
         }
-        // console.log(111)
         this.list.forEach(item => {
           item.values.forEach(item2 => {
             if (item2.checked == 1) {
               all += item2.name + "+"
-              // this.accessories.push(item2.code)
             }
           })
         })
-
-
       } else if (this.num1 == 6) {
         this.list.forEach(item => {
           item.ingredients.forEach(item2 => {
             if (item2.checked == 1) {
               all += item2.name + "+"
-              // this.accessories.push(item2.code)
             }
           })
         })
@@ -574,12 +623,26 @@ export default {
           item.specValueList.forEach(item2 => {
             if (item2.recommendFlag == 1) {
               all += item2.name + "+"
-              // this.accessories.push(item2.code)
             }
           })
         })
       }
+
+      // ★ 麦当劳自取：selected 只 push 一次，products 拍平
+      if ((this.num1 == 1 || this.num1 == 4) && allProducts.length > 0) {
+        selected.push({
+          round: 0,
+          products: allProducts
+        })
+      }
+
       all = (all + this.accessoriesText.join('+')).slice(0, -1)
+
+      // ★ push 前重算 channelFullPrice
+      if (this.num1 == 1 || this.num1 == 4) {
+        this.calcChannelFullPrice()
+      }
+
       if (this.goods.filter(item => item.specifications == all && item.fullPrice == this.fullPrice).length > 0) {
         this.goods.filter(item => item.specifications == all && item.fullPrice == this.fullPrice).forEach(item => {
           item.count += this.count
@@ -589,15 +652,15 @@ export default {
           storeid: this.storeid,
           specifications: all,
           detail: this.detalilist,
-          fullPrice: this.fullPrice,
+          selected: selected,          // ★ 新增
+          channelFullPrice: this.channelFullPrice,   // ★ 新增
+          fullPrice: Math.round(this.fullPrice * 100) / 100,
           count: this.count,
           accessories: this.accessories.length > 0 ? this.accessories : [],
           skuId: this.skuId,
-          skuCode: matchedSkuCode   // ← 只加这一行
+          skuCode: matchedSkuCode
         })
       }
-      // console.log(this.goods)
-      // return
       sessionStorage.setItem("goods", JSON.stringify(this.goods))
       if (sessionStorage.getItem("goods")) {
         this.$toast("加入成功")
@@ -606,7 +669,6 @@ export default {
         }, 800)
       }
     },
-    // 获取麦当劳商品详情
     getMDLProductDetailList() {
       let data = {
         apikey: this.$store.state.appkey,
@@ -614,33 +676,10 @@ export default {
         productId: this.productid
       }
       getMDLProductDetail(data).then(res => {
-        console.log(this.productid, "this.productid==")
         this.loadingflag = false
         if (res.code == 200) {
-          // console.log(res.data);
           this.detalilist = res.data
           this.list = this.detalilist.comboItems
-
-          // ffgai
-          //        this.list = this.detalilist.comboItems.map(item => {
-          //   if (item.comboProducts) {
-          //     // 找到第一个isDefault为1的索引
-          //     const defaultIndex = item.comboProducts.findIndex(p => p.isDefault == 1);
-
-          //     // 重置所有项的isDefault
-          //     item.comboProducts.forEach((p, i) => {
-          //       p.isDefault = i === defaultIndex ? 1 : 0;
-          //     });
-
-          //     // 如果没有默认项，设置第一个为默认
-          //     if (defaultIndex === -1 && item.comboProducts.length > 0) {
-          //       item.comboProducts[0].isDefault = 1;
-          //     }
-          //   }
-          //   return item;
-          // });
-
-
           this.fullPrice = this.detalilist.price
         } else {
           this.$toast(res.msg)
@@ -650,7 +689,6 @@ export default {
         }
       })
     },
-    // 获取肯德鸡详情
     getKFCProductDetailList() {
       this.list = []
       let data = {
@@ -682,7 +720,6 @@ export default {
               })
             })
           }
-          // console.log(res.data);
         } else {
           this.$toast(res.msg)
           setTimeout(() => {
@@ -691,7 +728,6 @@ export default {
         }
       })
     },
-    // 必胜客详情
     getBSKProductDetailList() {
       let data = {
         apikey: this.$store.state.appkey,
@@ -702,84 +738,77 @@ export default {
       getBSKProductDetail(data).then(res => {
         this.loadingflag = false
         if (res.code == 200) {
-          // console.log(res);
           this.detalilist = res.data
           this.list = this.detalilist.roundList
           this.fullPrice = this.detalilist.price
-          // this.selectDefault()
         } else {
           this.$toast(res.msg)
           setTimeout(() => {
             this.$router.go(-1)
           }, 1500)
         }
-
       })
     },
-    // 获取新商品详情
     getgoods_detail() {
       getgoods_detail({
         shopId: this.storeid,
         productId: this.productid
       }).then(res => {
-        console.log('完整返回:', JSON.stringify(res))
-        console.log('fff')
         this.loadingflag = false
-        // console.log(res)
         if (res.code == 200) {
+          // 肯德基自提，走回 KFC 详情接口
+          if (this.num1 == 2) {
+            this.getKFCProductDetailList()
+            return
+          }
+          // 只在本地调试时打开，测完删掉
+
+          // ========== 🧪 mock 结束 =========
           this.detalilist = res.data
-          console.log('menuFlag:', this.detalilist.menuFlag, 'num1:', this.num1, typeof this.num1)
-          console.log('99999999999')
-          // if(this.num1==4){
-          //   this.list = res.data.details.optional
-          // }
           this.fullPrice = this.detalilist.salePrice || 0
 
-          // ===== K记套餐：isMultiSpec == 1 =====
-          if (this.num1 == 2 && this.detalilist.isMultiSpec == 1) {
-            const specMap = {}
+          // 兜底：只有「1 个组」且「selectMinCount >= 2」的才是四宫格（只对麦当劳自提）
+          if (this.num1 == 1 && !this.flag) {
+            const optional = res.data.details?.optional || []
+            const required = res.data.details?.required || []
+            const groups = [...optional, ...required]
 
-            // 从 sortedSpecList 建立图片映射
-            const picMap = {}
-            if (this.detalilist.sortedSpecList) {
-              this.detalilist.sortedSpecList.forEach(spec => {
-                spec.specValueList.forEach(val => {
-                  picMap[val.specValueId] = val.specValuePic || ''
-                })
-              })
+            if (groups.length === 1) {
+              const g = groups[0]
+              if (g.selectMinCount >= 2 && g.selectMaxCount >= 2) {
+                this.num1 = 4
+              }
             }
+          }
 
-            this.detalilist.goodsSkuList.forEach((sku, skuIndex) => {
-              sku.skuItemList.forEach(item => {
-                if (!specMap[item.specName]) {
-                  specMap[item.specName] = {
-                    roundId: item.specId,
-                    roundNameCn: item.specName,
-                    itemList: {}
-                  }
-                }
-                const key = item.specValueId
-                if (!specMap[item.specName].itemList[key]) {
-                  specMap[item.specName].itemList[key] = {
-                    linkId: sku.skuId,
-                    showNameCn: item.specValue,
-                    defaultSelected: skuIndex === 0 ? 1 : 0,
-                    price: sku.salePrice,
-                    imageUrl: picMap[item.specValueId] || ''
-                  }
-                }
+          if (this.num1 == 4 && !this.flag) {
+            this.list = [...res.data.details.optional || [], ...res.data.details.required || []]
+
+            // ★ 让 checked 变成响应式
+            this.list.forEach(item => {
+              const arr = item.sku_infos || item.comboProducts || []
+              arr.forEach(s => {
+                this.$set(s, 'checked', s.checked === true || s.checked === 1)
               })
             })
 
-            this.list = Object.values(specMap).map(round => ({
-              ...round,
-              itemList: Object.values(round.itemList)
-            }))
-            // this.fullPrice = this.detalilist.goodsSkuList[0]?.channelPrice || this.detalilist.salePrice || 0
-            this.fullPrice = this.detalilist.goodsSkuList[0]?.salePrice || this.detalilist.goodsSkuList[0]?.channelPrice || this.detalilist.salePrice || 0
-            return
-          }
-          if (this.num1 == 4) {
+            this.fullPrice = this.detalilist.salePrice
+              || this.detalilist.product_price
+              || this.detalilist.price
+              || 0
+            this.list.forEach(item => {
+              const arr = item.sku_infos || item.comboProducts || []
+              arr.forEach(item2 => {
+                if ((item2.checked === true || item2.checked === 1) && item2.price) {
+                  this.fullPrice += Number(item2.price)
+                }
+              })
+            })
+            this.fullPrice = Math.round(this.fullPrice * 100) / 100
+
+            // ★ 算 channelFullPrice
+            this.calcChannelFullPrice()
+          } else if (this.num1 == 4 && this.flag) {
             this.list = [...res.data.details.optional || [], ...res.data.details.required || []]
             this.list.forEach(item => {
               item.sku_infos.forEach(item2 => {
@@ -790,14 +819,28 @@ export default {
             })
           } else if (this.num1 == 1) {
             this.list = [...res.data.details.optional || [], ...res.data.details.required || []]
-            // this.list.forEach(item => {
-            //   if(item.id){
-            //
-            //   }else {
-            //     item.sku_infos=[]
-            //     item.sku_infos=item
-            //   }
-            // })
+            // ★ 让 checked 响应式，并算 channelFullPrice
+            this.list.forEach(item => {
+              const arr = item.sku_infos || []
+              arr.forEach(s => {
+                this.$set(s, 'checked', s.checked === true || s.checked === 1)
+              })
+            })
+
+
+              // 👇👇👇 【新增】处理默认选中项的加价逻辑（解决页面初始化只显示 57.5 的问题） 👇👇👇
+  this.list.forEach(item => {
+    const arr = item.sku_infos || []
+    arr.forEach(item2 => {
+      if ((item2.checked === true || item2.checked === 1) && item2.price) {
+        this.fullPrice += Number(item2.price)
+      }
+    })
+  })
+  this.fullPrice = Math.round(this.fullPrice * 100) / 100 // 保持精度
+  // 👆👆👆 新增完毕 👆👆👆
+  
+            this.calcChannelFullPrice()
           } else if (this.num1 == 5) {
             this.list = res.data.details.spu_specs
             this.list.forEach(item => {
@@ -845,59 +888,40 @@ export default {
                 })
               })
             })
-            // console.log(this.list)
           } else {
             this.list = [...res.data.details.optional || [], ...res.data.details.required || []]
           }
         } else {
           this.$toast(res.msg)
-          // setTimeout(() => {
-          //   this.$router.go(-1)
-          // }, 1000)
         }
       })
     },
   },
   mounted() {
-    // 获取值
     this.num1 = this.$route.query.num1
     this.num2 = this.$route.query.num2
     this.productid = this.$route.query.id
-    console.log(this.$route.query.id, "this.$route.query.id==")
     this.storeid = this.$route.query.storeid
     this.flag = this.$route.query.flag
-    // 根据num1的值判断调用哪个详情接口
+
     if (this.flag) {
       if (this.num1 == 1) {
-        // 麦当劳
         this.getMDLProductDetailList()
       } else if (this.num1 == 2) {
-        // 肯德基
         this.getKFCProductDetailList()
       } else if (this.num1 == 3) {
-        // 麦当劳
         this.getBSKProductDetailList()
       }
     } else {
       if (this.num1 == 3) {
-        // 麦当劳
         this.getBSKProductDetailList()
       } else {
         this.getgoods_detail()
       }
     }
-    // else if (this.num1 == 4) {
-    //   // 星巴克
-    //   this.getXBKProductDetailList()
-    // } else if (this.num1 == 5) {
-    //   // 奈雪
-    //   this.getNXProductDetailList()
-    // }
   },
   created() {
     if (sessionStorage.getItem("goods")) {
-      // console.log(JSON.parse(sessionStorage.getItem("goods")));
-
       this.goods = JSON.parse(sessionStorage.getItem("goods"))
     }
   }
@@ -905,7 +929,7 @@ export default {
 </script>
 
 <style scoped lang="less">
-//详情图
+/* 样式不变，保持你原来的即可 */
 .productpic {
   background-color: #1B1504;
   min-height: 200px;
@@ -917,7 +941,6 @@ export default {
 
   .detailImg {
     width: 205px;
-    //width: 100%;
   }
 
   .detailImg4 {
@@ -926,7 +949,6 @@ export default {
   }
 }
 
-//规格
 .detail {
   padding: 15px 25px;
   border-top-right-radius: 20px;
@@ -1028,7 +1050,6 @@ export default {
           border-radius: 5px;
           box-sizing: border-box;
           padding: 10px 15px;
-          //min-height: 125px;
 
           .productImg {
             width: 84%;
@@ -1043,12 +1064,10 @@ export default {
           .innerName {
             font-size: 14px;
             text-align: center;
-            //font-weight: bold;
             margin-top: 5px;
 
             .quantity {
               font-size: 12px;
-              //font-weight: 500;
             }
           }
         }
@@ -1074,12 +1093,10 @@ export default {
           justify-content: space-between;
         }
       }
-
     }
   }
 }
 
-//底部按钮
 .footer {
   position: fixed;
   bottom: 0;
@@ -1167,5 +1184,27 @@ export default {
   .footerBtn6 {
     background-color: #21286B;
   }
+}
+
+.selectTip {
+  font-size: 14px;
+  color: #9B9B9B;
+  margin-bottom: 10px;
+
+  .tipWarn {
+    color: #D42B1D;
+  }
+}
+
+.diffPrice {
+  font-size: 12px;
+  color: #D42B1D;
+  margin-left: 4px;
+}
+
+.orderDisabled {
+  background-color: #CCCCCC !important;
+  color: #999999 !important;
+  pointer-events: none;
 }
 </style>

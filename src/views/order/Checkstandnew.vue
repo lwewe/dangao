@@ -308,10 +308,7 @@ export default {
       console.log('计算后的总价:', this.sumprice);
     },
     // 格式化商品用于支付
- // 格式化商品用于支付
-formatGoodsForPay(verifyData) {
-  console.log('formatGoodsForPay - 输入数据:', JSON.parse(JSON.stringify(verifyData)));
-  
+  formatGoodsForPay(verifyData) {
   let totalPrice = 0;
 
   const goodsList = verifyData.map(item => {
@@ -323,67 +320,17 @@ formatGoodsForPay(verifyData) {
       item.price ||
       0);
     const priceInYuan = priceInFen / 100;
-
-    // 2. 获取商品数量
     const quantity = item.count || item.quantity || 1;
 
-    // 3. 累加总价
+    // 2. 累加总价
     totalPrice += priceInYuan * quantity;
 
-    // 4. 构建规格选项
-    const specOptions = [];
-
-    // 从item.detail.specs获取所有规格定义
-    if (item.detail?.specs) {
-      item.detail.specs.forEach(spec => {
-        if (spec.specType === 1) {
-          // 已包含规格 - 必须包含所有选项
-          spec.options.forEach(option => {
-            specOptions.push({
-              specId: spec.specId,
-              optionId: option.optionId,
-              quantity: 1
-            });
-          });
-        } else if (spec.specType === 3) {
-          // 多选规格 - 从selectedData.multiOptions获取选中的选项
-          const selectedMulti = item.selectedData?.multiOptions?.[spec.specId];
-          if (selectedMulti) {
-            Object.entries(selectedMulti).forEach(([optionId, qty]) => {
-              if (qty > 0) {
-                specOptions.push({
-                  specId: spec.specId,
-                  optionId: optionId,
-                  quantity: qty
-                });
-              }
-            });
-          }
-        } else {
-          // 单选规格（包括已包含但在selectedData.specs中的）
-          const selectedOptionId = item.selectedData?.specs?.[spec.specId];
-          if (selectedOptionId) {
-            specOptions.push({
-              specId: spec.specId,
-              optionId: selectedOptionId,
-              quantity: 1
-            });
-          }
-        }
-      });
-    }
-
-    console.log('商品规格选项:', {
-      goodsId: item.productId || item.id || item.goodsId,
-      specOptions: specOptions
-    });
-
-    // 5. 返回统一格式的商品对象
+    // 3. ★ 核心：直接用 item.specOptions，绝不重新构建
     return {
-      goodsId: item.productId || item.id || item.goodsId || item.productid,
+      goodsId: item.goodsId || item.productId || item.id || item.productid,
       skuId: item.skuId,
       quantity: quantity,
-      specOptions: specOptions
+      specOptions: item.specOptions || []
     };
   });
 

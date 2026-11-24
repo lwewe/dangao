@@ -677,109 +677,57 @@ handleOptionClick(spec, clickedOption) {
     clickedOption.selected = true;
   }
 },
-    // 点击选好了跳转到支付
     paymentpage() {
-      if (this.shopcarlist.length == 0) {
-        this.$toast('请先选择商品');
-        return;
+  if (this.shopcarlist.length == 0) {
+    this.$toast('请先选择商品');
+    return;
+  }
+  if (!this.openStatus) {
+    this.$toast('门店未营业');
+    return;
+  }
+
+  this.$toast.loading({ message: '加载中...', forbidClick: true, duration: 10000 });
+
+  // ★ 直接拿购物车里已有的 specOptions，不再重新构建
+  const goodsData = this.shopcarlist.map(item => {
+    return {
+      goodsId: item.productId || item.id || item.goodsId,
+      skuId: item.skuId || item.defaultSkuId || '',
+      quantity: item.count || 1,
+      specOptions: item.specOptions || [],   // ★ 直接用
+      nameCn: item.nameCn || item.goodsName || item.productName,
+      price: item.price || (item.salesPrice ? item.salesPrice / 100 : 0),
+      imageUrl: item.imageUrl || item.goodsImage || item.productImage,
+      goodsType: item.goodsType
+    };
+  });
+
+  // 存到 sessionStorage 兜底
+  sessionStorage.setItem('verify', JSON.stringify(goodsData));
+  sessionStorage.setItem('shopcarlist', JSON.stringify(this.shopcarlist));
+
+  // ★ 把 goods 通过 URL 传给收银台
+  const goodsStr = encodeURIComponent(JSON.stringify(goodsData));
+
+  setTimeout(() => {
+    this.$toast.clear();
+    this.$router.push({
+      path: '/orderpaynew',
+      query: {
+        flag: this.flag,
+        num1: this.num1,
+        num2: this.num2,
+        packFlag: this.packFlag,
+        type: this.type,
+        storeCode: this.storeid,
+        shopName: this.productlist?.storeName || this.productlist?.name,
+        deliveryPrice: this.productlist?.deliveryPrice || 0,
+        goods: goodsStr    // ★ 关键
       }
-
-      if (!this.openStatus) {
-        this.$toast('门店未营业');
-        return;
-      }
-
-      this.$toast.loading({
-        message: '加载中...',
-        forbidClick: true,
-        duration: 10000
-      });
-
-      // 构建符合新API要求的商品数据
-      const goodsData = this.shopcarlist.map(item => {
-        // 处理规格选项 - 从商品的detail或selectedData中获取
-        let specOptions = [];
-
-        // 如果商品有规格选择（goodsType为2或3）
-        if (item.goodsType === 2 || item.goodsType === 3) {
-          // 从商品详情中获取选中的规格
-          if (item.selectedData && item.selectedData.specs) {
-            Object.entries(item.selectedData.specs).forEach(([specId, optionId]) => {
-              specOptions.push({
-                specId: specId,
-                optionId: optionId
-              });
-            });
-          }
-
-          // 处理多选规格
-          if (item.selectedData && item.selectedData.multiOptions) {
-            Object.entries(item.selectedData.multiOptions).forEach(([specId, optionIds]) => {
-              if (Array.isArray(optionIds)) {
-                optionIds.forEach(optionId => {
-                  specOptions.push({
-                    specId: specId,
-                    optionId: optionId
-                  });
-                });
-              }
-            });
-          }
-        }
-
-        // 价格处理：salesPrice是分，需要转换为元
-        const price = item.salesPrice ? (item.salesPrice / 100) :
-          (item.price || item.amount || 0);
-
-        return {
-          goodsId: item.productId || item.id || item.goodsId,
-          skuId: item.skuId || item.defaultSkuId || '',
-          quantity: item.count || 1,
-          specOptions: specOptions,
-          // 以下字段用于显示，不下单用
-          nameCn: item.nameCn || item.goodsName || item.productName,
-          price: price,
-          imageUrl: item.imageUrl || item.goodsImage || item.productImage,
-          goodsType: item.goodsType
-        };
-      });
-
-      // 构建完整的订单数据
-      const orderData = {
-        categoryCode: this.$route.query.categoryCode || 'C',
-        storeCode: this.storeid || this.$route.query.storeCode,
-        packFlag: this.packFlag || '0',
-        lng: this.flag ? (this.address_Item?.lon || null) : null,
-        lat: this.flag ? (this.address_Item?.lat || null) : null,
-        goods: goodsData,
-        phoneNo: this.phone || this.address_Item?.phone || '',
-        receiverName: this.flag ? (this.address_Item?.contact || null) : null,
-        receiverAddress: this.flag ? (this.location || null) : null
-      };
-
-      // 存储数据到sessionStorage
-      sessionStorage.setItem('orderData', JSON.stringify(orderData));
-      sessionStorage.setItem('verify', JSON.stringify(goodsData));
-      sessionStorage.setItem('shopcarlist', JSON.stringify(this.shopcarlist));
-
-      // 跳转到支付页面
-      setTimeout(() => {
-        this.$toast.clear();
-        this.$router.push({
-          path: '/orderpaynew',
-          query: {
-            flag: this.flag,
-            num1: this.num1,
-            num2: this.num2,
-            packFlag: this.packFlag,
-            type: this.type,
-            storeCode: this.storeid,
-            shopName: this.productlist?.storeName || this.productlist?.name,
-            deliveryPrice: this.productlist?.deliveryPrice || 0
-          }
-        });
-      }, 500);
-    },
+    });
+  }, 500);
+},
     replacestore() {
       // this.$router.go(-1)
       getAddCollect({

@@ -154,7 +154,7 @@
       <!--  -->
     </div>
     <!-- add 随心兑 -->
-    <div v-if="sxfcardfag === 1">
+    <div v-if="sxfcardfag === 1" style="display: none;">
       <div class="exchange-section">
         <div class="exchange-card">
 

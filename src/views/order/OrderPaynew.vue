@@ -223,7 +223,22 @@ export default {
     console.log(this.flagA +'this.flagA')
     this.packFlags  =  this.$route.query.packFlag;
 
+if (this.$route.query.goods) {
+    try {
+      const goodsFromUrl = JSON.parse(decodeURIComponent(this.$route.query.goods));
+      this.verify = Array.isArray(goodsFromUrl) ? goodsFromUrl : [goodsFromUrl];
+      this.goods = this.verify.slice(0, 2);
+      console.log('从 URL 获取 goods:', this.verify);
+    } catch (e) {
+      console.error('解析 URL goods 失败:', e);
+    }
+  }
 
+  // 从 sessionStorage 兜底
+  if (!this.verify || this.verify.length === 0) {
+    this.verify = JSON.parse(sessionStorage.getItem("verify"));
+    if (this.verify) this.goods = this.verify.slice(0, 2);
+  }
     if (this.flagA) {
       if (sessionStorage.getItem('address_Item')) {
         this.address_Item = JSON.parse(sessionStorage.getItem('address_Item'))
