@@ -2,6 +2,8 @@ import Vue from 'vue'
 import Router from 'vue-router'
 import HelloWorld from "@/HelloWorld.vue";
 import OrderFood from "@/views/store/OrderFood.vue";
+
+import FoodpayOrder from "@/views/store/FoodpayOrder.vue";
 import Select from '@/views/store/Select.vue'
 import DistanceStore from "@/views/store/DistanceStore.vue"
 import DistanceStorenew from "@/views/store/DistanceStorenew.vue"
@@ -374,6 +376,16 @@ const routes = [
             keep:true,
         }
     },
+ {
+        path: '/foodpayOrder',
+        component: FoodpayOrder,
+        meta: {
+            title: '订单支付',
+            keepAlive:true,
+            keep:true,
+        }
+    },
+    
 
     {
         path: '/select',
